@@ -131,22 +131,20 @@
         <div class="panel"><div id="guessmap"></div></div>
     </div>
 
-    <script>
-
+ <script>
     const DIFFICULTIES = {
         easy:   { d: 1.2,  zoom: 7 },  // ~250 km span box
         medium: { d: 0.45, zoom: 9 },  // ~100 km span box
-        hard:   { d: 0.22, zoom: 11 }  // ~50 km span box (closer zoom)
+        hard:   { d: 0.22, zoom: 11 }  // ~50 km span box
     };
 
     // === Satellite ===
     const satMap = L.map('satellite', {
         zoomControl: true,
         attributionControl: false,
-        maxBoundsViscosity: 1.0
+        maxBoundsViscosity: 0.8 // М'якша межа при досягненні краю
     }).setView([20, 0], 2);
 
-    // FIX: maxNativeZoom stops "Map not available" error on deep zoom
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 18,
         maxNativeZoom: 17
@@ -243,7 +241,6 @@
         guessMarker = targetRect = line = guess = null;
         phase = 'guessing';
 
-        // Select random location
         answer = points[Math.floor(Math.random() * points.length)];
 
         const d = currentDifficulty.d;
@@ -252,8 +249,12 @@
             [answer.lat + d, answer.lng + d]
         ]);
 
+        // Обмежуємо мінімальний зум (щоб не відзумлювали занадто далеко)
         satMap.setMinZoom(currentDifficulty.zoom);
-        satMap.setMaxBounds(currentBounds);
+
+        // ВИПРАВЛЕННЯ: Додаємо відступ pad(1.0), щоб можна було вільно підсунути будь-яку точку в центр
+        satMap.setMaxBounds(currentBounds.pad(1.0));
+
         satMap.setView([answer.lat, answer.lng], currentDifficulty.zoom);
 
         guessMap.setView([20, 0], 2);
@@ -285,10 +286,8 @@
             let distKm = 0;
 
             if (isInside) {
-                // MAXIMUM SCORE if guess is anywhere inside the shown square!
                 roundScore = 5000;
             } else {
-                // Calculate distance from center if outside
                 const centerLatLng = L.latLng([answer.lat, answer.lng]);
                 const distMeters = centerLatLng.distanceTo(guessLatLng);
                 distKm = distMeters / 1000;
@@ -369,10 +368,10 @@
         const maxPossibleScore = totalRounds * 5000;
         const accuracy = Math.round((totalScore / maxPossibleScore) * 100);
 
-        let rank = "";
-        if (accuracy >= 85) rank = "";
-        else if (accuracy >= 65) rank = "";
-        else if (accuracy >= 40) rank = "";
+        let rank = "Tourist Explorer";
+        if (accuracy >= 85) rank = "Master Cartographer 🌍";
+        else if (accuracy >= 65) rank = "Globe Trotter ✈️";
+        else if (accuracy >= 40) rank = "Regional Guide 🗺️";
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} / ${maxPossibleScore.toLocaleString()}`;
         document.getElementById('end-accuracy').textContent = `${accuracy}%`;
@@ -382,6 +381,6 @@
         endModal.classList.add('end-overlay');
         endModal.style.display = 'flex';
     }
-    </script>
+</script>
 </body>
 </html>
