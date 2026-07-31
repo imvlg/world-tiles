@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>World Tiles</title>
+    <title>World Tiles - Precise City & Country Scaling</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -44,7 +44,6 @@
         .status-text { font-size: 13px; font-weight: 500; }
         .score-badge { background: #0284c7; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
         .opp-score-badge { background: #f59e0b; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; display: none; }
-        .timer-badge { background: #e11d48; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; display: none; }
 
         .btn-primary {
             padding: 10px 20px; font-size: 14px; font-weight: 600; border: none;
@@ -143,7 +142,6 @@
     <div id="game">
         <div id="hud">
             <span id="status" class="status-text">Round 1</span>
-            <span id="timer" class="timer-badge">03:00</span>
             <span id="score" class="score-badge">You: 0 pts</span>
             <span id="opp-score" class="opp-score-badge">Opponent: 0 pts</span>
             <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Check</button>
@@ -166,7 +164,7 @@
                 <label>Match Type:</label>
                 <select id="match-type-select" onchange="toggleMatchType()">
                     <option value="solo" selected>Singleplayer</option>
-                    <option value="online">Multiplayer</option>
+                    <option value="online">Multiplayer (Online PeerJS)</option>
                 </select>
             </div>
 
@@ -194,7 +192,7 @@
                 </div>
                 <div class="mode-card" data-mode="cities" onclick="selectGameMode('cities')">
                     <h3>Guess City</h3>
-                    <p>Global city locations</p>
+                    <p>Tightly framed city grid</p>
                 </div>
                 <div class="mode-card" data-mode="country" onclick="selectGameMode('country')">
                     <h3>Country Mode</h3>
@@ -209,8 +207,8 @@
                 <div style="margin-top: 6px;">
                     <label>Country Location Pool:</label>
                     <select id="country-pool-type">
-                        <option value="all" selected>All Locations (Adaptive Scaling)</option>
-                        <option value="cities">Cities Only</option>
+                        <option value="all" selected>All Locations (% Proportional Tile)</option>
+                        <option value="cities">Cities Only (Tight Urban Grid)</option>
                     </select>
                 </div>
             </div>
@@ -225,48 +223,21 @@
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
-                <label>City Category:</label>
+                <label>City Category & Grid Zoom:</label>
                 <select id="cities-difficulty">
-                    <option value="easy">Easy (&gt; 3M Population)</option>
-                    <option value="medium" selected>Medium (1M - 3M Population)</option>
-                    <option value="hard">Hard (100k - 1M Population)</option>
-                    <option value="expert">Mega Hard (&lt; 100k Small Towns)</option>
+                    <option value="easy">Easy (District View / &gt; 3M Pop)</option>
+                    <option value="medium" selected>Medium (Block Grid / 1M - 3M Pop)</option>
+                    <option value="hard">Hard (Street Mesh / 100k - 1M Pop)</option>
+                    <option value="expert">Mega Hard (Tight Alley Mesh / &lt; 100k Pop)</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>Format:</label>
-                <select id="format-select" onchange="toggleFormatOptions()">
-                    <option value="rounds" selected>Classic (No time limit)</option>
-                    <option value="timed_total">Time Attack (Total time)</option>
-                    <option value="timed_round">Blitz (Time per round)</option>
-                </select>
-            </div>
-
-            <div id="rounds-group" class="form-group">
                 <label>Rounds Count:</label>
                 <select id="rounds-select">
                     <option value="5" selected>5 Rounds</option>
                     <option value="10">10 Rounds</option>
                     <option value="15">15 Rounds</option>
-                </select>
-            </div>
-
-            <div id="timed-total-group" class="form-group" style="display: none;">
-                <label>Total Match Time:</label>
-                <select id="timer-total-select">
-                    <option value="60">1 Minute</option>
-                    <option value="180" selected>3 Minutes</option>
-                    <option value="300">5 Minutes</option>
-                </select>
-            </div>
-
-            <div id="timed-round-group" class="form-group" style="display: none;">
-                <label>Seconds Per Round:</label>
-                <select id="timer-round-select">
-                    <option value="10">10 Seconds</option>
-                    <option value="20" selected>20 Seconds</option>
-                    <option value="30">30 Seconds</option>
                 </select>
             </div>
 
@@ -315,11 +286,6 @@
             <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 8px;">Achievements:</label>
             <div id="achievements-container" class="achievements-list"></div>
 
-            <div style="display: flex; gap: 8px; margin-top: 14px;">
-                <button class="btn-primary" onclick="exportData()" style="flex: 1; padding: 6px; font-size: 11px; background: #334155;">Export Backup</button>
-                <button class="btn-primary" onclick="importData()" style="flex: 1; padding: 6px; font-size: 11px; background: #334155;">Import Data</button>
-            </div>
-
             <div style="display: flex; gap: 10px; margin-top: 14px;">
                 <button class="btn-primary" onclick="saveProfile()" style="flex: 1;">Save</button>
                 <button class="btn-primary" onclick="closeProfile()" style="flex: 1; background: #475569;">Close</button>
@@ -356,13 +322,33 @@
     </div>
 
     <script>
-    const TILES_DIFF = { easy: { d: 3.5 }, medium: { d: 0.8 }, hard: { d: 0.08 } };
+    // ISO Country Mapping for Flag Emoji Generation
+    const COUNTRY_ISO_MAP = {
+        "Ukraine": "UA", "Portugal": "PT", "United States": "US", "USA": "US", "Germany": "DE",
+        "France": "FR", "Spain": "ES", "Italy": "IT", "United Kingdom": "GB", "UK": "GB",
+        "Canada": "CA", "Poland": "PL", "Japan": "JP", "China": "CN", "Brazil": "BR",
+        "Australia": "AU", "Turkey": "TR", "Mexico": "MX", "Argentina": "AR", "India": "IN",
+        "Netherlands": "NL", "Belgium": "BE", "Switzerland": "CH", "Austria": "AT", "Sweden": "SE",
+        "Norway": "NO", "Finland": "FI", "Denmark": "DK", "Greece": "GR", "Czech Republic": "CZ",
+        "Slovakia": "SK", "Hungary": "HU", "Romania": "RO", "Bulgaria": "BG", "Croatia": "HR",
+        "Ireland": "IE", "Lithuania": "LT", "Latvia": "LV", "Estonia": "EE", "Iceland": "IS"
+    };
+
+    function getCountryFlagEmoji(countryName) {
+        const code = COUNTRY_ISO_MAP[countryName];
+        if (!code) return "🌐";
+        return code.toUpperCase().replace(/./g, char => 
+            String.fromCodePoint(127397 + char.charCodeAt(0))
+        );
+    }
+
+    const TILES_DIFF = { easy: { d: 2.5 }, medium: { d: 0.6 }, hard: { d: 0.05 } };
 
     const ACHIEVEMENTS = [
         { id: 'first_game', title: 'First Steps', desc: 'Play 1 game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>` },
         { id: 'perfect_hit', title: 'Bullseye', desc: 'Get 5,000 pts in a round', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>` },
         { id: 'country_expert', title: 'Patriot', desc: 'Play in Country Mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>` },
-        { id: 'mp_match', title: 'Duelist', desc: 'Play an online match', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+        { id: 'mp_match', title: 'Duelist', desc: 'Play an online match', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 1 0 7.75"/></svg>` },
         { id: 'level_5', title: 'Expert Cartographer', desc: 'Reach Profile Level 5', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` }
     ];
 
@@ -443,31 +429,6 @@
         closeProfile();
     }
 
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentUser));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `world_tiles_${currentUser.name}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-    }
-
-    function importData() {
-        const jsonStr = prompt("Paste JSON backup string:");
-        if (jsonStr) {
-            try {
-                const parsed = JSON.parse(jsonStr);
-                if (parsed && parsed.id) {
-                    currentUser = parsed;
-                    localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
-                    updateProfileUI();
-                    alert("Profile loaded!");
-                }
-            } catch(e) { alert("Invalid backup file."); }
-        }
-    }
-
     function openProfileModal() {
         updateProfileUI();
         document.getElementById('profile-modal').style.display = 'flex';
@@ -506,7 +467,7 @@
 
     // State Variables
     let allPoints = [], activePointsPool = [], presetGamePoints = [];
-    let currentGameMode = 'tiles', formatMode = 'rounds', matchType = 'solo';
+    let currentGameMode = 'tiles', matchType = 'solo';
     let totalRounds = 5, round = 0, totalScore = 0, opponentTotalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
@@ -519,10 +480,9 @@
     const statusEl = document.getElementById('status');
     const scoreEl = document.getElementById('score');
     const oppScoreEl = document.getElementById('opp-score');
-    const timerEl = document.getElementById('timer');
     const btn = document.getElementById('btn');
 
-    // Load CSV & Populate Countries
+    // Load CSV & Populate Countries with Flag Emojis
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -536,12 +496,14 @@
                 };
             }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
-            // Populate Country Selector
+            // Populate Country Selector with full name + Flag Emoji
             const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
             const cSelect = document.getElementById('country-select');
             countries.forEach(c => {
                 const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c;
+                opt.value = c;
+                const flag = getCountryFlagEmoji(c);
+                opt.textContent = `${flag} ${c}`;
                 cSelect.appendChild(opt);
             });
 
@@ -606,11 +568,9 @@
 
         peerConn.on('data', data => {
             if (data.type === 'START_GAME') {
-                // Sync settings from host
                 presetGamePoints = data.points;
                 totalRounds = data.rounds;
                 currentGameMode = data.mode;
-                
                 document.getElementById('lobby-modal').style.display = 'none';
                 startMatch();
             } else if (data.type === 'SYNC_ROUND_SCORE') {
@@ -632,11 +592,6 @@
         if (mode === 'country') unlockAchievement('country_expert');
     }
 
-    function toggleFormatOptions() {
-        formatMode = document.getElementById('format-select').value;
-        document.getElementById('rounds-group').style.display = (formatMode === 'rounds' || formatMode === 'timed_round') ? 'block' : 'none';
-    }
-
     function openLobby() {
         document.getElementById('end-modal').style.display = 'none';
         document.getElementById('lobby-modal').style.display = 'flex';
@@ -646,7 +601,6 @@
 
     // === Start Match ===
     document.getElementById('start-btn').addEventListener('click', () => {
-        // Pool Filtering
         if (currentGameMode === 'country') {
             const selectedC = document.getElementById('country-select').value;
             const pType = document.getElementById('country-pool-type').value;
@@ -701,6 +655,57 @@
         }, 50);
     }
 
+    // === Dynamic Precise Tile Math (Country Percentile & City Mesh) ===
+    function calculateTileDelta(point) {
+        let d = 0.5;
+
+        if (currentGameMode === 'country') {
+            const selectedC = point.country || document.getElementById('country-select').value;
+            const cPoints = allPoints.filter(p => p.country === selectedC);
+            
+            if (cPoints.length > 0) {
+                const lats = cPoints.map(p => p.lat);
+                const lngs = cPoints.map(p => p.lng);
+                const latSpan = Math.max(...lats) - Math.min(...lats);
+                const lngSpan = Math.max(...lngs) - Math.min(...lngs);
+                
+                // Geographic size of country
+                const countryDimension = Math.max(Math.min(latSpan, lngSpan), 0.15);
+                
+                const diffKey = document.getElementById('tiles-difficulty').value;
+                // Strict Percentage ratios of the country's size
+                let pct = diffKey === 'easy' ? 0.10 : (diffKey === 'medium' ? 0.04 : 0.015);
+                d = countryDimension * pct;
+
+                // Absolute bounds protection so micro-countries don't get eaten whole
+                const maxD = diffKey === 'easy' ? 0.5 : (diffKey === 'medium' ? 0.2 : 0.05);
+                const minD = diffKey === 'easy' ? 0.015 : (diffKey === 'medium' ? 0.008 : 0.004);
+                d = Math.max(minD, Math.min(maxD, d));
+            }
+        } 
+        else if (currentGameMode === 'cities') {
+            // TIGHT CITY MESH ZOOM (Focus strictly on street/block grid)
+            const diffKey = document.getElementById('cities-difficulty').value;
+            
+            // Base tight frame in degrees (~1deg = 111km)
+            let baseD = 0.01; // ~1 km frame
+            if (diffKey === 'easy') baseD = 0.02;     // ~2 km district view
+            else if (diffKey === 'medium') baseD = 0.01; // ~1 km block grid
+            else if (diffKey === 'hard') baseD = 0.005; // ~500 m street mesh
+            else if (diffKey === 'expert') baseD = 0.003; // ~300 m alley mesh
+
+            // Scale slightly by city population (logarithmic)
+            const popScale = point.pop > 0 ? Math.log10(point.pop / 100000 + 1) : 1;
+            d = baseD * Math.min(1.8, Math.max(0.7, popScale * 0.8));
+        } 
+        else { // World Tiles
+            const diffKey = document.getElementById('tiles-difficulty').value;
+            d = TILES_DIFF[diffKey].d;
+        }
+
+        return d;
+    }
+
     // === Round Setup ===
     function startRound() {
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
@@ -713,26 +718,7 @@
             answer = activePointsPool[Math.floor(Math.random() * activePointsPool.length)];
         }
 
-        // Calculating Dynamic Bounds (d)
-        let d = 0.8;
-        if (currentGameMode === 'country') {
-            const selectedC = answer.country || document.getElementById('country-select').value;
-            const cPoints = allPoints.filter(p => p.country === selectedC);
-            if (cPoints.length > 0) {
-                const lats = cPoints.map(p => p.lat);
-                const lngs = cPoints.map(p => p.lng);
-                const span = Math.max((Math.max(...lats) - Math.min(...lats) + Math.max(...lngs) - Math.min(...lngs)) / 2, 0.4);
-                
-                const diffKey = document.getElementById('tiles-difficulty').value;
-                const factor = diffKey === 'easy' ? 0.25 : (diffKey === 'medium' ? 0.06 : 0.015);
-                d = Math.max(0.006, Math.min(3.0, span * factor));
-            }
-        } else if (currentGameMode === 'tiles') {
-            const diffKey = document.getElementById('tiles-difficulty').value;
-            d = TILES_DIFF[diffKey].d;
-        } else {
-            d = 0.15;
-        }
+        const d = calculateTileDelta(answer);
 
         currentBounds = L.latLngBounds([
             [answer.lat - d, answer.lng - d],
@@ -801,7 +787,6 @@
         totalScore += roundScore;
         gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
-        // Send score live to peer
         if (peerConn) {
             peerConn.send({ type: 'SYNC_ROUND_SCORE', totalScore: totalScore });
         }
@@ -820,8 +805,9 @@
 
         scoreEl.textContent = `You: ${totalScore.toLocaleString()} pts`;
         
+        const flag = getCountryFlagEmoji(answer.country);
         const resultDetail = isInside ? `Bullseye!` : `Off by ${distKm.toFixed(1)} km`;
-        const locationText = answer.name ? `${answer.name}, ${answer.country}` : `${answer.country}`;
+        const locationText = answer.name ? `${answer.name}, ${flag} ${answer.country}` : `${flag} ${answer.country}`;
         statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
@@ -829,7 +815,6 @@
         btn.disabled = false;
     }
 
-    // === End Game ===
     function showEndGameModal() {
         phase = 'finished';
         btn.disabled = true;
@@ -847,7 +832,8 @@
         breakdownList.innerHTML = '';
 
         gameHistory.forEach(h => {
-            const locationText = h.answer.name ? `${h.answer.name} (${h.answer.country})` : h.answer.country;
+            const flag = getCountryFlagEmoji(h.answer.country);
+            const locationText = h.answer.name ? `${h.answer.name} (${flag} ${h.answer.country})` : `${flag} ${h.answer.country}`;
             breakdownList.innerHTML += `
                 <div class="breakdown-row">
                     <span><strong>#${h.roundNum}</strong> ${locationText}</span>
@@ -858,7 +844,6 @@
         const maxScore = gameHistory.length * 5000;
         const accuracy = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
-        // Multiplayer Victory Check
         const winnerBanner = document.getElementById('winner-banner');
         if (matchType === 'online') {
             document.getElementById('end-opp-score').textContent = `${opponentTotalScore.toLocaleString()} pts`;
