@@ -6,7 +6,6 @@
     <title>World Tiles - Precision Map Game</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
         body { margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow: hidden; }
@@ -70,24 +69,43 @@
         .mode-card h3 { margin: 0 0 4px 0; font-size: 13px; color: #38bdf8; }
         .mode-card p { margin: 0; font-size: 10px; color: #94a3b8; }
 
-        .form-group { margin: 10px 0; text-align: left; }
+        .form-group { margin: 10px 0; text-align: left; position: relative; }
         .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
         .form-group select, .form-group input {
             width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
             border: 1px solid #334155; color: #fff; font-size: 13px; outline: none;
         }
 
+        /* Custom Country Dropdown UI */
+        .custom-dropdown-btn {
+            width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
+            border: 1px solid #334155; color: #fff; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .custom-dropdown-list {
+            position: absolute; top: 100%; left: 0; right: 0; background: #0f172a;
+            border: 1px solid #334155; border-radius: 8px; max-height: 180px; overflow-y: auto;
+            z-index: 2500; display: none; margin-top: 4px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .custom-dropdown-item {
+            padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: 0.15s;
+        }
+        .custom-dropdown-item:hover { background: #1e293b; color: #38bdf8; }
+
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
         .stat-card { background: #0f172a; padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
         .stat-value { font-size: 18px; font-weight: 700; color: #38bdf8; }
         .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
+
+        .level-progress-bg { background: #0f172a; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #334155; overflow: hidden; margin-top: 6px; }
+        .level-progress-fill { background: linear-gradient(90deg, #0284c7, #38bdf8); height: 100%; width: 0%; transition: width 0.3s; }
 
         .achievements-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-top: 10px; max-height: 140px; overflow-y: auto; }
         .achievement-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 11px; }
         .achievement-item:last-child { border-bottom: none; }
         .ach-icon { font-size: 16px; }
 
-        .flag-img { width: 18px; height: 13px; object-fit: cover; border-radius: 2px; vertical-align: middle; margin-right: 6px; display: inline-block; }
+        .flag-img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; vertical-align: middle; display: inline-block; }
 
         .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 160px; overflow-y: auto; }
         .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
@@ -149,15 +167,19 @@
 
             <div id="country-select-group" class="form-group" style="display: none;">
                 <label>Select Country:</label>
-                <select id="country-select"></select>
+                <div id="country-dropdown-btn" class="custom-dropdown-btn" onclick="toggleCountryDropdown()">
+                    <span id="country-dropdown-selected">Select country...</span>
+                    <span>▼</span>
+                </div>
+                <div id="country-dropdown-list" class="custom-dropdown-list"></div>
             </div>
 
             <div id="tiles-diff-group" class="form-group">
-                <label>Tile Zoom Level (Difficulty):</label>
+                <label>Tile View Size (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy">Easy (Large Region view)</option>
-                    <option value="medium" selected>Medium (City Area view)</option>
-                    <option value="hard">Hard (Detailed Street view)</option>
+                    <option value="easy" selected>Easy (~250 km Large Region)</option>
+                    <option value="medium">Medium (~60 km Metropolitan Area)</option>
+                    <option value="hard">Hard (~15 km Local Detail)</option>
                 </select>
             </div>
 
@@ -197,7 +219,21 @@
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
             <h2>User Profile</h2>
-            
+
+            <div style="background: #0f172a; padding: 12px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #94a3b8;">Level Progress:</span>
+                    <span id="user-level-display" style="font-weight: 700; color: #38bdf8; font-size: 13px;">Level 1</span>
+                </div>
+                <div class="level-progress-bg">
+                    <div id="xp-progress-fill" class="level-progress-fill"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 4px;">
+                    <span id="xp-text">0 / 1000 XP</span>
+                    <span>Total XP: <span id="total-xp-text">0</span></span>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Username:</label>
                 <input type="text" id="username-input" placeholder="Enter name...">
@@ -253,21 +289,29 @@
     </div>
 
     <script>
-    const COUNTRY_ISO = {
-        "Ukraine": "ua", "Portugal": "pt", "United States": "us", "USA": "us",
-        "Germany": "de", "France": "fr", "Spain": "es", "Italy": "it",
-        "United Kingdom": "gb", "UK": "gb", "Canada": "ca", "Poland": "pl",
-        "Japan": "jp", "China": "cn", "Brazil": "br", "Australia": "au",
-        "Turkey": "tr", "Mexico": "mx", "Argentina": "ar", "India": "in",
-        "Netherlands": "nl", "Belgium": "be", "Switzerland": "ch", "Austria": "at",
-        "Sweden": "se", "Norway": "no", "Finland": "fi", "Denmark": "dk",
-        "Greece": "gr", "Czech Republic": "cz", "Slovakia": "sk", "Hungary": "hu",
-        "Romania": "ro", "Bulgaria": "bg", "Croatia": "hr", "Ireland": "ie"
+    // ISO Mapping for full country flags rendering
+    const COUNTRY_ISO_MAP = {
+        "Andorra": "ad", "United Arab Emirates": "ae", "Afghanistan": "af", "Albania": "al", "Armenia": "am",
+        "Angola": "ao", "Argentina": "ar", "Austria": "at", "Australia": "au", "Azerbaijan": "az",
+        "Bosnia and Herzegovina": "ba", "Bangladesh": "bd", "Belgium": "be", "Bulgaria": "bg", "Bahrain": "bh",
+        "Bolivia": "bo", "Brazil": "br", "Belarus": "by", "Canada": "ca", "Switzerland": "ch", "Chile": "cl",
+        "China": "cn", "Colombia": "co", "Costa Rica": "cr", "Cuba": "cu", "Czech Republic": "cz", "Germany": "de",
+        "Denmark": "dk", "Algeria": "dz", "Ecuador": "ec", "Estonia": "ee", "Egypt": "eg", "Spain": "es",
+        "Finland": "fi", "France": "fr", "United Kingdom": "gb", "Georgia": "ge", "Greece": "gr", "Guatemala": "gt",
+        "Croatia": "hr", "Hungary": "hu", "Indonesia": "id", "Ireland": "ie", "Israel": "il", "India": "in",
+        "Iraq": "iq", "Iran": "ir", "Iceland": "is", "Italy": "it", "Jordan": "jo", "Japan": "jp", "Kenya": "ke",
+        "South Korea": "kr", "Kazakhstan": "kz", "Lithuania": "lt", "Luxembourg": "lu", "Latvia": "lv",
+        "Morocco": "ma", "Moldova": "md", "Montenegro": "me", "Mexico": "mx", "Malaysia": "my", "Nigeria": "ng",
+        "Netherlands": "nl", "Norway": "no", "New Zealand": "nz", "Peru": "pe", "Philippines": "ph", "Pakistan": "pk",
+        "Poland": "pl", "Portugal": "pt", "Paraguay": "py", "Qatar": "qa", "Romania": "ro", "Serbia": "rs",
+        "Saudi Arabia": "sa", "Sweden": "se", "Singapore": "sg", "Slovakia": "sk", "Slovenia": "si", "Thailand": "th",
+        "Tunisia": "tn", "Turkey": "tr", "Taiwan": "tw", "Ukraine": "ua", "United States": "us", "Uruguay": "uy",
+        "Uzbekistan": "uz", "Venezuela": "ve", "Vietnam": "vn", "South Africa": "za"
     };
 
     function getCountryHTML(name) {
         if (!name) return "Unknown Country";
-        const code = COUNTRY_ISO[name];
+        const code = COUNTRY_ISO_MAP[name];
         if (!code) return name;
         return `<img src="https://flagcdn.com/20x15/${code}.png" class="flag-img" alt="${name}"> ${name}`;
     }
@@ -289,6 +333,8 @@
 
     let currentUser = loadSavedUser();
 
+    function calculateLevel(xp) { return Math.floor((xp || 0) / 1000) + 1; }
+
     function saveUserData() {
         localStorage.setItem('geo_user_v5', JSON.stringify(currentUser));
         updateProfileUI();
@@ -309,10 +355,20 @@
     }
 
     function updateProfileUI() {
+        const currentLvl = calculateLevel(currentUser.xp);
+        const progressInLevel = (currentUser.xp || 0) % 1000;
+        const pct = (progressInLevel / 1000) * 100;
+
+        document.getElementById('level-badge-top').textContent = `Lvl ${currentLvl}`;
+        document.getElementById('user-level-display').textContent = `Level ${currentLvl}`;
+        document.getElementById('xp-progress-fill').style.width = `${pct}%`;
+        document.getElementById('xp-text').textContent = `${progressInLevel} / 1000 XP`;
+        document.getElementById('total-xp-text').textContent = currentUser.xp || 0;
+
         document.getElementById('username-display').textContent = currentUser.name;
         document.getElementById('username-input').value = currentUser.name;
-        document.getElementById('user-games').textContent = currentUser.gamesPlayed;
-        document.getElementById('user-highscore').textContent = currentUser.highScore;
+        document.getElementById('user-games').textContent = currentUser.gamesPlayed || 0;
+        document.getElementById('user-highscore').textContent = currentUser.highScore || 0;
         document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
 
         const achList = document.getElementById('achievements-list');
@@ -341,16 +397,10 @@
     document.getElementById('profile-btn').addEventListener('click', openProfileModal);
     function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
 
-    // === Maps Initialization ===
+    // === Satellite Map: Zoom IN is enabled, Zoom OUT is locked at tile size ===
     const satMap = L.map('satellite', { 
-        zoomControl: false, 
-        attributionControl: false,
-        dragging: false,
-        touchZoom: false,
-        doubleClickZoom: false,
-        scrollWheelZoom: false,
-        boxZoom: false,
-        keyboard: false
+        zoomControl: true, 
+        attributionControl: false
     }).setView([20, 0], 2);
     
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
@@ -364,8 +414,23 @@
         iconSize: [16, 16], iconAnchor: [8, 8]
     });
 
+    let satMaskLayer = null;
+    function updateSatelliteMask(bounds) {
+        if (satMaskLayer) satMap.removeLayer(satMaskLayer);
+        const giantWorld = [[180, -360], [180, 360], [-180, 360], [-180, -360]];
+        const innerHole = [
+            [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
+            [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
+            [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
+            [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
+        ];
+        satMaskLayer = L.polygon([giantWorld, innerHole], {
+            color: '#000', fillColor: '#0f172a', fillOpacity: 0.95, stroke: false
+        }).addTo(satMap);
+    }
+
     let allPoints = [], activePool = [];
-    let currentGameMode = 'tiles';
+    let currentGameMode = 'tiles', selectedCountry = '';
     let totalRounds = 5, round = 0, totalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
@@ -385,6 +450,7 @@
         return array;
     }
 
+    // Load CSV & setup custom country picker
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -399,18 +465,35 @@
             }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
             const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
-            const cSelect = document.getElementById('country-select');
+            const dropdownList = document.getElementById('country-dropdown-list');
+            dropdownList.innerHTML = '';
+            
             countries.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c;
-                opt.textContent = c;
-                cSelect.appendChild(opt);
+                const item = document.createElement('div');
+                item.className = 'custom-dropdown-item';
+                item.innerHTML = getCountryHTML(c);
+                item.onclick = () => {
+                    selectedCountry = c;
+                    document.getElementById('country-dropdown-selected').innerHTML = getCountryHTML(c);
+                    toggleCountryDropdown();
+                };
+                dropdownList.appendChild(item);
             });
+
+            if (countries.length > 0) {
+                selectedCountry = countries[0];
+                document.getElementById('country-dropdown-selected').innerHTML = getCountryHTML(selectedCountry);
+            }
 
             const startBtn = document.getElementById('start-btn');
             startBtn.textContent = 'Start Game';
             startBtn.disabled = false;
         });
+
+    function toggleCountryDropdown() {
+        const list = document.getElementById('country-dropdown-list');
+        list.style.display = list.style.display === 'block' ? 'none' : 'block';
+    }
 
     function selectGameMode(mode) {
         currentGameMode = mode;
@@ -428,21 +511,20 @@
     }
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
-    // FIXED: Classic fixed-tile sizes returned! No country dimension scaling!
+    // Large Tile Deltas restored (Hundreds of kilometers)
     function getTileDelta() {
-        if (currentGameMode === 'cities') return 0.006;
+        if (currentGameMode === 'cities') return 0.008; // ~1km City Street box
         const diff = document.getElementById('tiles-difficulty').value;
-        if (diff === 'easy') return 0.12;       // ~12km box
-        if (diff === 'medium') return 0.035;    // ~3.5km box
-        return 0.008;                           // ~800m tight box
+        if (diff === 'easy') return 1.25;       // ~250 km Large Tile Frame
+        if (diff === 'medium') return 0.35;    // ~60 km Regional Tile Frame
+        return 0.08;                           // ~15 km Local Detail Frame
     }
 
     document.getElementById('start-btn').addEventListener('click', () => {
         let pool = [];
 
         if (currentGameMode === 'country') {
-            const selectedC = document.getElementById('country-select').value;
-            pool = allPoints.filter(p => p.country === selectedC);
+            pool = allPoints.filter(p => p.country === selectedCountry);
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             let cityPool = allPoints.filter(p => p.pop > 10000);
@@ -470,8 +552,7 @@
         scoreEl.textContent = `You: 0 pts`;
         
         if (currentGameMode === 'country') {
-            const selectedC = document.getElementById('country-select').value;
-            const cPoints = allPoints.filter(p => p.country === selectedC);
+            const cPoints = allPoints.filter(p => p.country === selectedCountry);
             if (cPoints.length > 0) {
                 const lats = cPoints.map(p => p.lat);
                 const lngs = cPoints.map(p => p.lng);
@@ -503,11 +584,13 @@
             [answer.lat + d, answer.lng + d]
         ]);
 
-        // STRICT SAT MAP BOUNDS LOCK (Zero Leak!)
+        // SAT MAP: FIT TILE, ALLOW ZOOM-IN, BLOCK ZOOM-OUT PAST BOX!
         satMap.fitBounds(currentBounds);
-        const lockZoom = satMap.getBoundsZoom(currentBounds, true);
-        satMap.setMinZoom(lockZoom);
-        satMap.setMaxZoom(lockZoom);
+        updateSatelliteMask(currentBounds);
+
+        const minZoomLevel = satMap.getBoundsZoom(currentBounds, true);
+        satMap.setMinZoom(minZoomLevel); // Cannot zoom out past the tile boundary!
+        satMap.setMaxZoom(18);           // CAN zoom in deep to inspect!
         satMap.setMaxBounds(currentBounds);
         satMap.options.maxBoundsViscosity = 1.0;
 
@@ -526,7 +609,7 @@
                 timerDisplay.textContent = `${timerLeft}s`;
                 if (timerLeft <= 0) {
                     clearInterval(timerInterval);
-                    if (!guess) guess = [0, 0]; // Default guess on timeout
+                    if (!guess) guess = [0, 0];
                     processGuess();
                 }
             }, 1000);
