@@ -78,9 +78,9 @@
             <div class="form-group">
                 <label for="difficulty-select">Map View Scale:</label>
                 <select id="difficulty-select">
-                    <option value="easy">Easy (Large Region / Countries)</option>
-                    <option value="medium" selected>Medium (Province / District)</option>
-                    <option value="hard">Hard (Local Area / City scale)</option>
+                    <option value="easy">Easy (~250 x 250 km region)</option>
+                    <option value="medium" selected>Medium (~100 x 100 km region)</option>
+                    <option value="hard">Hard (~40 x 40 km region)</option>
                 </select>
             </div>
 
@@ -132,11 +132,11 @@
     </div>
 
     <script>
-    // Zoom levels determine scale. Bounds will auto-adapt to viewport size!
+    // Region size parameters (d = half-span in degrees)
     const DIFFICULTIES = {
-        easy:   { zoom: 6 },
-        medium: { zoom: 8 },
-        hard:   { zoom: 11 }
+        easy:   { d: 1.2 },  // ~250 km region
+        medium: { d: 0.5 },  // ~100 km region
+        hard:   { d: 0.2 }   // ~40 km region
     };
 
     // === Satellite Map ===
@@ -226,7 +226,13 @@
         round = 0; totalScore = 0; gameHistory = [];
         clearSummaryLayers();
         scoreEl.textContent = `0 / ${totalRounds * 5000} pts`;
-        startRound();
+        
+        // Оновлюємо розмір карти після закриття модалки
+        setTimeout(() => {
+            satMap.invalidateSize();
+            guessMap.invalidateSize();
+            startRound();
+        }, 100);
     });
 
     document.getElementById('restart-btn').addEventListener('click', () => {
@@ -244,17 +250,26 @@
 
         answer = points[Math.floor(Math.random() * points.length)];
 
-        // 1. Встановити супутникову карту за координатами та зумом
-        satMap.setView([answer.lat, answer.lng], currentDifficulty.zoom);
+        // 1. Створюємо фіксований квадрат за координатами
+        const d = currentDifficulty.d;
+        currentBounds = L.latLngBounds([
+            [answer.lat - d, answer.lng - d],
+            [answer.lat + d, answer.lng + d]
+        ]);
 
-        // 2. Отримати ТОЧНІ видимі межі екрана супутника
-        currentBounds = satMap.getBounds();
+        // 2. Скидаємо минулі обмежувачі для точності
+        satMap.setMinZoom(1);
+        satMap.setMaxBounds(null);
 
-        // 3. Зафіксувати обмеження для переміщення
-        satMap.setMinZoom(currentDifficulty.zoom);
-        satMap.setMaxBounds(currentBounds.pad(1.0));
+        // 3. Підганяємо супутникову карту під цей квадрат
+        satMap.fitBounds(currentBounds);
 
-        // Скинути вигляд правої карти
+        // 4. Встановлюємо нові ліміти зуму і переміщення
+        setTimeout(() => {
+            satMap.setMinZoom(satMap.getZoom());
+            satMap.setMaxBounds(currentBounds.pad(1.0));
+        }, 100);
+
         guessMap.setView([20, 0], 2);
 
         round++;
@@ -295,7 +310,7 @@
             totalScore += roundScore;
             gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
-            // Відображаємо прямокутник території
+            // Малюємо точно той самий квадрат на карті відповідей
             targetRect = L.rectangle(currentBounds, {
                 color: '#ef4444',
                 weight: 2,
