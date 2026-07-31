@@ -145,7 +145,10 @@
         <div class="modal">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h2 style="margin:0;">Lobby Settings</h2>
-                <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
+                    <button onclick="document.getElementById('lobby-modal').style.display='none'" class="avatar-btn" style="font-size: 14px; padding: 4px 12px;" title="Close">&#10005;</button>
+                </div>
             </div>
 
             <div class="mode-selector">
@@ -175,18 +178,20 @@
             <div id="tiles-diff-group" class="form-group">
                 <label>Tile View Size (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy" selected>Easy (600 km Large Region)</option>
-                    <option value="medium">Medium (200 km Metropolitan Area)</option>
-                    <option value="hard">Hard (50 km Local Detail)</option>
+                    <option value="easy" selected>Easy (1500 km)</option>
+                    <option value="medium">Medium (500 km)</option>
+                    <option value="hard">Hard (150 km)</option>
+                    <option value="expert">Expert (40 km)</option>
                 </select>
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
                 <label>City Category:</label>
                 <select id="cities-difficulty">
-                    <option value="easy">Easy (Top Megacities)</option>
-                    <option value="medium" selected>Medium (Mid-sized cities)</option>
-                    <option value="hard">Hard (Smaller Towns)</option>
+                    <option value="easy">Easy (5M+)</option>
+                    <option value="medium" selected>Medium (1M+)</option>
+                    <option value="hard">Hard (500K-1M)</option>
+                    <option value="expert">Expert (under 500K)</option>
                 </select>
             </div>
 
@@ -301,7 +306,11 @@
     function getCountryHTML(code) {
         if (!code) return "Unknown";
         const cCode = code.trim().toUpperCase();
-        const fullName = ISO_TO_COUNTRY[cCode] || cCode;
+        let fullName = ISO_TO_COUNTRY[cCode];
+        if (!fullName) {
+            try { fullName = new Intl.DisplayNames(['en'], { type: 'region' }).of(cCode); }
+            catch (e) { fullName = cCode; }
+        }
         if (cCode.length === 2) {
             return `<img src="https://flagcdn.com/20x15/${cCode.toLowerCase()}.png" class="flag-img" alt="${fullName}"> ${fullName}`;
         }
@@ -400,13 +409,9 @@
 
     // Супутникова карта ЗАБЛОКОВАНА від будь-якого перетягування чи виходу за рамки
     const satMap = L.map('satellite', { 
-        zoomControl: false, 
+        zoomControl: true, 
         attributionControl: false, 
-        dragging: false, 
-        scrollWheelZoom: false, 
-        doubleClickZoom: false, 
-        boxZoom: false, 
-        touchZoom: false 
+        maxBoundsViscosity: 1.0
     }).setView([20, 0], 2);
     
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
@@ -508,13 +513,11 @@
             pool = Array.from(uniqueMap.values());
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
-            let cityPool = allPoints.filter(p => p.pop > 10000);
-            if (cityPool.length === 0) cityPool = allPoints.filter(p => p.name !== '');
-            cityPool.sort((a, b) => b.pop - a.pop);
-            const total = cityPool.length;
-            if (diff === 'easy') pool = cityPool.slice(0, Math.floor(total * 0.15));
-            else if (diff === 'medium') pool = cityPool.slice(Math.floor(total * 0.15), Math.floor(total * 0.50));
-            else pool = cityPool.slice(Math.floor(total * 0.50));
+            if (diff === 'easy')        pool = allPoints.filter(p => p.pop >= 5000000);
+            else if (diff === 'medium') pool = allPoints.filter(p => p.pop >= 1000000);
+            else if (diff === 'hard')   pool = allPoints.filter(p => p.pop >= 500000 && p.pop < 1000000);
+            else                        pool = allPoints.filter(p => p.pop > 0 && p.pop < 500000);
+            console.log('City pool:', diff, pool.length);
         } else {
             const uniqueMap = new Map();
             allPoints.forEach(p => uniqueMap.set(`${p.lat},${p.lng}`, p));
@@ -569,14 +572,20 @@
         if (currentGameMode === 'country') {
             // Адаптивний розмір з урахуванням габаритів конкретної країни
             const cPoints = allPoints.filter(p => p.country === selectedCountry);
-            const lats = cPoints.map(p => p.lat); const lngs = cPoints.map(p => p.lng);
-            const latSpan = Math.max(Math.max(...lats) - Math.min(...lats), 1);
-            const lngSpan = Math.max(Math.max(...lngs) - Math.min(...lngs), 1);
-            let dLat = latSpan * 0.15;
-            let dLng = lngSpan * 0.15;
-            dLat = Math.min(Math.max(dLat, 0.8), 12);
-            dLng = Math.min(Math.max(dLng, 0.8), 12);
-            currentBounds = L.latLngBounds([[answer.lat - dLat, answer.lng - dLng], [answer.lat + dLat, answer.lng + dLng]]);
+            const lats = cPoints.map(p => p.lat), lngs = cPoints.map(p => p.lng);
+            const latSpan = Math.max(...lats) - Math.min(...lats);
+            const lngSpan = Math.max(...lngs) - Math.min(...lngs);
+            const S = Math.max(Math.min(latSpan, lngSpan), 0.05);
+
+            const cd = document.getElementById('tiles-difficulty').value;
+            let pct, maxD, minD;
+            if (cd === 'easy')        { pct = 0.10;  maxD = 0.5;  minD = 0.015; }
+            else if (cd === 'medium') { pct = 0.04;  maxD = 0.2;  minD = 0.008; }
+            else if (cd === 'hard')   { pct = 0.015; maxD = 0.05; minD = 0.004; }
+            else                      { pct = 0.007; maxD = 0.02; minD = 0.002; }
+
+            delta = Math.min(Math.max(S * pct, minD), maxD);
+            currentBounds = L.latLngBounds([[answer.lat - delta, answer.lng - delta], [answer.lat + delta, answer.lng + delta]]);
         } else if (currentGameMode === 'cities') {
             let pop = answer.pop || 50000;
             let radiusKm = 2 + (Math.sqrt(pop) / 80);
@@ -586,18 +595,23 @@
         } else {
             // Збільшені розміри World Tiles (Easy - 600 км, Medium - 200 км, Hard - 50 км)
             const diff = document.getElementById('tiles-difficulty').value;
-            if (diff === 'easy') delta = 600 / 111 / 2;
-            else if (diff === 'medium') delta = 200 / 111 / 2;
-            else delta = 50 / 111 / 2;
+            let km;
+            if (diff === 'easy') km = 1500;
+            else if (diff === 'medium') km = 500;
+            else if (diff === 'hard') km = 150;
+            else km = 40;
+            delta = km / 111 / 2;
             currentBounds = L.latLngBounds([[answer.lat - delta, answer.lng - delta], [answer.lat + delta, answer.lng + delta]]);
         }
 
-        satMap.fitBounds(currentBounds.pad(0.1));
-        updateSatelliteMask(currentBounds);
-
-        satMap.setMaxBounds(currentBounds.pad(0.2)); 
-        satMap.setMinZoom(satMap.getBoundsZoom(currentBounds, false));
+        satMap.setMaxBounds(null);
+        satMap.setMinZoom(2);
+        satMap.fitBounds(currentBounds);
+        const fitZoom = satMap.getBoundsZoom(currentBounds);
+        satMap.setMinZoom(fitZoom);
         satMap.setMaxZoom(18);
+        satMap.setMaxBounds(currentBounds);
+        updateSatelliteMask(currentBounds);
 
         round++;
         statusEl.textContent = `Round ${round} of ${totalRounds}`;
