@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>World Tiles</title>
+    <title>World Tiles - Online Multiplayer</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
         body { margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow: hidden; }
@@ -38,7 +39,7 @@
             z-index: 1000; background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px 24px; border-radius: 16px; display: flex; align-items: center;
-            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 440px;
+            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 460px;
         }
         .status-text { font-size: 14px; font-weight: 500; }
         .score-badge { background: #0284c7; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
@@ -66,7 +67,7 @@
         .modal h2 { margin-top: 0; font-size: 22px; color: #fff; }
 
         /* Mode Selectors */
-        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
         .mode-card {
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
             padding: 12px; cursor: pointer; text-align: center; transition: 0.2s;
@@ -75,7 +76,7 @@
         .mode-card h3 { margin: 0 0 4px 0; font-size: 15px; color: #38bdf8; }
         .mode-card p { margin: 0; font-size: 11px; color: #94a3b8; }
 
-        .form-group { margin: 12px 0; text-align: left; }
+        .form-group { margin: 10px 0; text-align: left; }
         .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
         .form-group select, .form-group input {
             width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
@@ -107,7 +108,10 @@
         .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
         .breakdown-row:last-child { border-bottom: none; }
 
-        /* Mobile Adaptation */
+        /* Multiplayer Section */
+        .mp-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-top: 10px; text-align: center; }
+        .mp-code { font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 2px; margin: 6px 0; user-select: all; }
+
         @media (max-width: 768px) {
             #top-bar { padding: 0 12px; }
             .brand { font-size: 16px; }
@@ -150,11 +154,37 @@
     <div id="lobby-modal" class="modal-overlay">
         <div class="modal">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h2 style="margin:0;">Select Game Mode</h2>
+                <h2 style="margin:0;">Lobby Settings</h2>
                 <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
             </div>
             
-            <div class="mode-selector">
+            <!-- Match Type Selector -->
+            <div class="form-group">
+                <label>Match Type:</label>
+                <select id="match-type-select" onchange="toggleMatchType()">
+                    <option value="solo" selected>Singleplayer</option>
+                    <option value="online">Multiplayer (Online PeerJS)</option>
+                </select>
+            </div>
+
+            <!-- Multiplayer Room Setup -->
+            <div id="mp-setup-box" class="mp-box" style="display: none;">
+                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;">
+                    <button class="btn-primary" onclick="initHostRoom()" style="padding: 6px 12px; font-size: 12px;">Create Room</button>
+                    <button class="btn-primary" onclick="showJoinInput()" style="padding: 6px 12px; font-size: 12px; background: #334155;">Join Room</button>
+                </div>
+                <div id="mp-host-info" style="display: none;">
+                    <span style="font-size: 11px; color: #94a3b8;">Share Room Code with your friend:</span>
+                    <div id="room-code-display" class="mp-code">GENERATING...</div>
+                    <span id="mp-status-text" style="font-size: 11px; color: #f59e0b;">Waiting for opponent to connect...</span>
+                </div>
+                <div id="mp-join-info" style="display: none;">
+                    <input type="text" id="join-code-input" placeholder="Enter Room Code..." style="text-align: center; font-weight: 700; text-transform: uppercase;">
+                    <button class="btn-primary" onclick="joinRoom()" style="width: 100%; margin-top: 6px; padding: 8px;">Connect to Host</button>
+                </div>
+            </div>
+
+            <div class="mode-selector" style="margin-top: 12px;">
                 <div class="mode-card active" data-mode="tiles" onclick="selectGameMode('tiles')">
                     <h3>World Tiles</h3>
                     <p>Guess region boundaries from satellite views</p>
@@ -166,11 +196,11 @@
             </div>
 
             <div id="tiles-diff-group" class="form-group">
-                <label>Tile View Size:</label>
+                <label>Tile View Size (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy">Easy (Large Region)</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard (Small Region)</option>
+                    <option value="easy">Easy (~350 km area)</option>
+                    <option value="medium" selected>Medium (~80 km area)</option>
+                    <option value="hard">Hard (~8 km detailed area)</option>
                 </select>
             </div>
 
@@ -262,11 +292,9 @@
                 </div>
             </div>
 
-            <!-- Achievements -->
             <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 8px;">Achievements:</label>
             <div id="achievements-container" class="achievements-list"></div>
 
-            <!-- Data Backup Buttons -->
             <div style="display: flex; gap: 8px; margin-top: 14px;">
                 <button class="btn-primary" onclick="exportData()" style="flex: 1; padding: 6px; font-size: 11px; background: #334155;">Export Backup</button>
                 <button class="btn-primary" onclick="importData()" style="flex: 1; padding: 6px; font-size: 11px; background: #334155;">Import Data</button>
@@ -307,16 +335,16 @@
     </div>
 
     <script>
-    const TILES_DIFF = { easy: { d: 1.2 }, medium: { d: 0.5 }, hard: { d: 0.2 } };
+    // Adjusted bounds so tile difficulty differences are clear
+    const TILES_DIFF = { easy: { d: 3.5 }, medium: { d: 0.8 }, hard: { d: 0.08 } };
 
     const ACHIEVEMENTS = [
         { id: 'first_game', title: 'First Steps', desc: 'Play 1 game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>` },
         { id: 'perfect_hit', title: 'Bullseye', desc: 'Get 5,000 pts in a round', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>` },
         { id: 'blitz_master', title: 'Speed Demon', desc: 'Play in Blitz mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>` },
         { id: 'town_explorer', title: 'Town Explorer', desc: 'Play Mega Hard City mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>` },
-        { id: 'level_5', title: 'Expert Cartographer', desc: 'Reach Profile Level 5', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` },
-        { id: 'level_10', title: 'Master Geographer', desc: 'Reach Profile Level 10', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2zM18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>` },
-        { id: 'sniper', title: 'Sharpshooter', desc: 'Hit 3 perfect scores in a game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>` }
+        { id: 'mp_match', title: 'Duelist', desc: 'Play an online match', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
+        { id: 'level_5', title: 'Expert Cartographer', desc: 'Reach Profile Level 5', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` }
     ];
 
     // User Profile Initialization
@@ -331,7 +359,6 @@
         unlockedAchieve: []
     };
 
-    // XP & Level Logic (Progressive Curve)
     function getXpRequiredForLevel(lvl) {
         if (lvl <= 1) return 0;
         return Math.floor(1200 * Math.pow(lvl - 1, 1.4));
@@ -339,9 +366,7 @@
 
     function calculateLevel(xp) {
         let lvl = 1;
-        while (xp >= getXpRequiredForLevel(lvl + 1)) {
-            lvl++;
-        }
+        while (xp >= getXpRequiredForLevel(lvl + 1)) lvl++;
         return lvl;
     }
 
@@ -351,7 +376,6 @@
         currentUser.level = newLevel;
 
         if (newLevel >= 5) unlockAchievement('level_5');
-        if (newLevel >= 10) unlockAchievement('level_10');
 
         localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
         updateProfileUI();
@@ -378,7 +402,6 @@
         document.getElementById('xp-text').textContent = `${progressInLevel} / ${totalNeeded} XP`;
         document.getElementById('total-xp-text').textContent = currentUser.xp;
 
-        // Render Achievements
         const achContainer = document.getElementById('achievements-container');
         achContainer.innerHTML = '';
         ACHIEVEMENTS.forEach(a => {
@@ -413,14 +436,14 @@
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentUser));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `world_tiles_profile_${currentUser.name}.json`);
+        downloadAnchor.setAttribute("download", `world_tiles_${currentUser.name}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
     }
 
     function importData() {
-        const jsonStr = prompt("Paste JSON string from your backup file:");
+        const jsonStr = prompt("Paste JSON backup string:");
         if (jsonStr) {
             try {
                 const parsed = JSON.parse(jsonStr);
@@ -428,10 +451,10 @@
                     currentUser = parsed;
                     localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
                     updateProfileUI();
-                    alert("Data imported successfully!");
+                    alert("Profile loaded successfully!");
                 }
             } catch(e) {
-                alert("Error reading backup file.");
+                alert("Invalid backup file.");
             }
         }
     }
@@ -458,10 +481,8 @@
 
     let satMaskLayer = null;
 
-    // Mask Satellite area outside bounds so map aspect ratio matches target exactly
     function updateSatelliteMask(bounds) {
         if (satMaskLayer) satMap.removeLayer(satMaskLayer);
-
         const outerWorld = [[90, -180], [90, 180], [-90, 180], [-90, -180]];
         const innerHole = [
             [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
@@ -469,24 +490,23 @@
             [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
             [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
         ];
-
         satMaskLayer = L.polygon([outerWorld, innerHole], {
-            color: '#000',
-            fillColor: '#0f172a',
-            fillOpacity: 0.85,
-            stroke: false
+            color: '#000', fillColor: '#0f172a', fillOpacity: 0.85, stroke: false
         }).addTo(satMap);
     }
 
     // State Variables
-    let allPoints = [], activePointsPool = [];
-    let currentGameMode = 'tiles', formatMode = 'rounds';
+    let allPoints = [], activePointsPool = [], presetGamePoints = [];
+    let currentGameMode = 'tiles', formatMode = 'rounds', matchType = 'solo';
     let timeRemaining = 0, timerInterval = null;
     let totalRounds = 5, round = 0, totalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
     let phase = 'guessing', gameHistory = [], summaryLayers = [];
     let perfectHitsCountInGame = 0;
+
+    // Multiplayer (PeerJS) State
+    let peer = null, peerConn = null, isHost = false, opponentGuess = null;
 
     const statusEl = document.getElementById('status');
     const scoreEl = document.getElementById('score');
@@ -499,15 +519,11 @@
         .then(text => {
             const lines = text.trim().split('\n');
             lines.shift();
-            
             allPoints = lines.map(line => {
                 const p = line.split(',');
                 return {
-                    lng: parseFloat(p[0]),
-                    lat: parseFloat(p[1]),
-                    name: p[2] ? p[2].trim() : '',
-                    country: p[3] ? p[3].trim() : '',
-                    pop: p[4] ? parseInt(p[4]) : 0
+                    lng: parseFloat(p[0]), lat: parseFloat(p[1]),
+                    name: p[2] ? p[2].trim() : '', country: p[3] ? p[3].trim() : '', pop: p[4] ? parseInt(p[4]) : 0
                 };
             }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
@@ -518,6 +534,68 @@
         .catch(() => {
             document.getElementById('start-btn').textContent = 'Error loading points.csv';
         });
+
+    function toggleMatchType() {
+        matchType = document.getElementById('match-type-select').value;
+        document.getElementById('mp-setup-box').style.display = matchType === 'online' ? 'block' : 'none';
+    }
+
+    // PeerJS Networking
+    function initHostRoom() {
+        isHost = true;
+        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+        peer = new Peer(`WT-${code}`);
+        document.getElementById('mp-host-info').style.display = 'block';
+        document.getElementById('mp-join-info').style.display = 'none';
+        document.getElementById('room-code-display').textContent = `WT-${code}`;
+
+        peer.on('open', () => {
+            document.getElementById('mp-status-text').textContent = 'Waiting for opponent to connect...';
+        });
+
+        peer.on('connection', conn => {
+            peerConn = conn;
+            setupPeerListeners();
+            document.getElementById('mp-status-text').textContent = 'Opponent Connected! Ready to Start.';
+            document.getElementById('mp-status-text').style.color = '#10b981';
+            unlockAchievement('mp_match');
+        });
+    }
+
+    function showJoinInput() {
+        isHost = false;
+        document.getElementById('mp-host-info').style.display = 'none';
+        document.getElementById('mp-join-info').style.display = 'block';
+    }
+
+    function joinRoom() {
+        const roomCode = document.getElementById('join-code-input').value.trim().toUpperCase();
+        if (!roomCode) return alert("Enter Room Code!");
+
+        peer = new Peer();
+        peer.on('open', () => {
+            peerConn = peer.connect(roomCode);
+            setupPeerListeners();
+        });
+    }
+
+    function setupPeerListeners() {
+        peerConn.on('open', () => {
+            alert('Connected to room!');
+            unlockAchievement('mp_match');
+        });
+
+        peerConn.on('data', data => {
+            if (data.type === 'START_GAME') {
+                presetGamePoints = data.points;
+                totalRounds = data.rounds;
+                document.getElementById('lobby-modal').style.display = 'none';
+                startMultiplayerMatch();
+            } else if (data.type === 'OPPONENT_GUESS') {
+                opponentGuess = data.guess;
+            }
+        });
+    }
 
     function selectGameMode(mode) {
         currentGameMode = mode;
@@ -561,18 +639,19 @@
 
         totalRounds = parseInt(document.getElementById('rounds-select').value);
 
-        if (formatMode === 'timed_total') {
-            timeRemaining = parseInt(document.getElementById('timer-total-select').value);
-            timerEl.style.display = 'inline-block';
-            startTotalTimer();
-        } else if (formatMode === 'timed_round') {
-            timerEl.style.display = 'inline-block';
-            unlockAchievement('blitz_master');
-        } else {
-            timerEl.style.display = 'none';
+        if (matchType === 'online' && isHost && peerConn) {
+            presetGamePoints = [];
+            for(let i = 0; i < totalRounds; i++) {
+                presetGamePoints.push(activePointsPool[Math.floor(Math.random() * activePointsPool.length)]);
+            }
+            peerConn.send({ type: 'START_GAME', points: presetGamePoints, rounds: totalRounds });
         }
 
         document.getElementById('lobby-modal').style.display = 'none';
+        startMultiplayerMatch();
+    });
+
+    function startMultiplayerMatch() {
         round = 0; totalScore = 0; perfectHitsCountInGame = 0; gameHistory = [];
         summaryLayers.forEach(l => guessMap.removeLayer(l));
         summaryLayers = [];
@@ -584,53 +663,21 @@
             guessMap.invalidateSize();
             startRound();
         }, 50);
-    });
-
-    function startTotalTimer() {
-        clearInterval(timerInterval);
-        updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            updateTimerDisplay();
-            if (timeRemaining <= 0) {
-                clearInterval(timerInterval);
-                showEndGameModal();
-            }
-        }, 1000);
-    }
-
-    function startRoundTimer() {
-        clearInterval(timerInterval);
-        timeRemaining = parseInt(document.getElementById('timer-round-select').value);
-        updateTimerDisplay();
-        timerInterval = setInterval(() => {
-            timeRemaining--;
-            updateTimerDisplay();
-            if (timeRemaining <= 0) {
-                clearInterval(timerInterval);
-                if (phase === 'guessing') {
-                    guess = [0, 0];
-                    processGuess();
-                }
-            }
-        }, 1000);
-    }
-
-    function updateTimerDisplay() {
-        const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
-        const s = (timeRemaining % 60).toString().padStart(2, '0');
-        timerEl.textContent = `${m}:${s}`;
     }
 
     // === Round Setup ===
     function startRound() {
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
-        guessMarker = targetRect = line = guess = null;
+        guessMarker = targetRect = line = guess = opponentGuess = null;
         phase = 'guessing';
 
-        answer = activePointsPool[Math.floor(Math.random() * activePointsPool.length)];
+        if (presetGamePoints.length > 0) {
+            answer = presetGamePoints[round];
+        } else {
+            answer = activePointsPool[Math.floor(Math.random() * activePointsPool.length)];
+        }
 
-        let d = 0.5;
+        let d = 0.8;
         if (currentGameMode === 'tiles') {
             const diffKey = document.getElementById('tiles-difficulty').value;
             d = TILES_DIFF[diffKey].d;
@@ -656,13 +703,9 @@
         guessMap.setView([20, 0], 2);
 
         round++;
-        statusEl.textContent = formatMode === 'timed_total' ? `Round ${round}` : `Round ${round} of ${totalRounds}`;
+        statusEl.textContent = `Round ${round} of ${totalRounds}`;
         btn.textContent = 'Check';
         btn.disabled = true;
-
-        if (formatMode === 'timed_round') {
-            startRoundTimer();
-        }
     }
 
     guessMap.on('click', e => {
@@ -679,7 +722,7 @@
         if (phase === 'guessing') {
             processGuess();
         } else if (phase === 'revealed') {
-            if (formatMode !== 'timed_total' && round >= totalRounds) {
+            if (round >= totalRounds) {
                 showEndGameModal();
             } else {
                 startRound();
@@ -688,25 +731,25 @@
     });
 
     function processGuess() {
-        clearInterval(timerInterval);
         if (!guess) return;
+
+        if (peerConn) {
+            peerConn.send({ type: 'OPPONENT_GUESS', guess: guess });
+        }
 
         const guessLatLng = L.latLng(guess);
         const isInside = currentBounds.contains(guessLatLng);
         
-        let roundScore = 0;
-        let distKm = 0;
+        let roundScore = 0, distKm = 0;
 
         if (isInside) {
             roundScore = 5000;
             perfectHitsCountInGame++;
             currentUser.perfectHits = (currentUser.perfectHits || 0) + 1;
             unlockAchievement('perfect_hit');
-            if (perfectHitsCountInGame >= 3) unlockAchievement('sniper');
         } else {
             const centerLatLng = L.latLng([answer.lat, answer.lng]);
-            const distMeters = centerLatLng.distanceTo(guessLatLng);
-            distKm = distMeters / 1000;
+            distKm = centerLatLng.distanceTo(guessLatLng) / 1000;
             roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 2000)));
         }
 
@@ -732,13 +775,12 @@
         statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
-        btn.textContent = (formatMode !== 'timed_total' && round >= totalRounds) ? 'Finish Game' : 'Next Round';
+        btn.textContent = (round >= totalRounds) ? 'Finish Game' : 'Next Round';
         btn.disabled = false;
     }
 
-    // === End Game Modal & Stats ===
+    // === End Game Modal ===
     function showEndGameModal() {
-        clearInterval(timerInterval);
         phase = 'finished';
         btn.disabled = true;
 
@@ -746,46 +788,15 @@
 
         currentUser.gamesPlayed++;
         unlockAchievement('first_game');
-
         if (totalScore > currentUser.highScore) currentUser.highScore = totalScore;
 
-        // Calculate XP Earned
         const earnedXP = Math.round((totalScore * 0.25) + (perfectHitsCountInGame * 250));
         addXP(earnedXP);
 
-        const allCoords = [];
         const breakdownList = document.getElementById('rounds-breakdown-list');
         breakdownList.innerHTML = '';
 
         gameHistory.forEach(h => {
-            const centerCoords = [h.answer.lat, h.answer.lng];
-
-            // Numbered Guess Marker
-            const gIcon = L.divIcon({
-                className: '',
-                html: `<div style="width:22px;height:22px;border-radius:50%;background:#0284c7;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.4);">${h.roundNum}</div>`,
-                iconSize: [22, 22], iconAnchor: [11, 11]
-            });
-
-            const mG = L.marker(h.guess, { icon: gIcon }).addTo(guessMap);
-            const rect = L.rectangle(h.bounds, {
-                color: h.isInside ? '#10b981' : '#ef4444',
-                weight: 2, fillColor: h.isInside ? '#10b981' : '#ef4444', fillOpacity: 0.25
-            }).addTo(guessMap);
-
-            // Connect line from Marker to Center of Tile
-            const roundLine = L.polyline([h.guess, centerCoords], {
-                color: h.isInside ? '#10b981' : '#f59e0b',
-                weight: 2,
-                dashArray: '5,5'
-            }).addTo(guessMap);
-
-            roundLine.bindTooltip(`Round ${h.roundNum}: ${h.isInside ? 'Bullseye' : h.distKm.toFixed(1) + ' km'} (+${h.roundScore} pts)`);
-
-            summaryLayers.push(mG, rect, roundLine);
-            allCoords.push(h.guess, centerCoords);
-
-            // Add row to modal breakdown
             const locationText = h.answer.name ? `${h.answer.name} (${h.answer.country})` : h.answer.country;
             breakdownList.innerHTML += `
                 <div class="breakdown-row">
@@ -794,25 +805,17 @@
                 </div>`;
         });
 
-        if (allCoords.length > 0) guessMap.fitBounds(L.latLngBounds(allCoords).pad(0.2));
-
         const maxScore = gameHistory.length * 5000;
         const accuracy = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-
-        let rank = "Novice Explorer";
-        if (accuracy >= 90) rank = "Legendary Cartographer";
-        else if (accuracy >= 75) rank = "Senior Navigator";
-        else if (accuracy >= 50) rank = "Experienced Globe Trotter";
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} pts`;
         document.getElementById('end-xp').textContent = `+${earnedXP} XP`;
         document.getElementById('end-accuracy').textContent = `${accuracy}%`;
-        document.getElementById('end-rank').textContent = rank;
+        document.getElementById('end-rank').textContent = accuracy >= 80 ? "Master Navigator" : "Globe Explorer";
 
         document.getElementById('end-modal').style.display = 'flex';
     }
 
-    // Window Resize Handler
     window.addEventListener('resize', () => {
         satMap.invalidateSize();
         guessMap.invalidateSize();
