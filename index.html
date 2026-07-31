@@ -76,6 +76,9 @@
             border: 1px solid #334155; color: #fff; font-size: 13px; outline: none;
         }
 
+        .multiplayer-box { background: #0f172a; padding: 12px; border-radius: 8px; border: 1px dashed #38bdf8; margin: 12px 0; }
+        .multiplayer-box input { border: 1px solid #38bdf8; background: #1e293b; }
+
         /* Custom Country Dropdown UI */
         .custom-dropdown-btn {
             width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
@@ -91,6 +94,7 @@
             padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: 0.15s;
         }
         .custom-dropdown-item:hover { background: #1e293b; color: #38bdf8; }
+        .flag-img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; vertical-align: middle; display: inline-block; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
         .stat-card { background: #0f172a; padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
@@ -99,13 +103,8 @@
 
         .level-progress-bg { background: #0f172a; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #334155; overflow: hidden; margin-top: 6px; }
         .level-progress-fill { background: linear-gradient(90deg, #0284c7, #38bdf8); height: 100%; width: 0%; transition: width 0.3s; }
-
         .achievements-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-top: 10px; max-height: 140px; overflow-y: auto; }
         .achievement-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 11px; }
-        .achievement-item:last-child { border-bottom: none; }
-        .ach-icon { font-size: 16px; }
-
-        .flag-img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; vertical-align: middle; display: inline-block; }
 
         .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 160px; overflow-y: auto; }
         .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
@@ -153,15 +152,15 @@
             <div class="mode-selector">
                 <div class="mode-card active" data-mode="tiles" onclick="selectGameMode('tiles')">
                     <h3>World Tiles</h3>
-                    <p>Global tile frames</p>
+                    <p>Global frames</p>
                 </div>
                 <div class="mode-card" data-mode="cities" onclick="selectGameMode('cities')">
                     <h3>Guess City</h3>
-                    <p>Tight city streets</p>
+                    <p>Population based</p>
                 </div>
                 <div class="mode-card" data-mode="country" onclick="selectGameMode('country')">
                     <h3>Country Mode</h3>
-                    <p>Single country tiles</p>
+                    <p>Single country</p>
                 </div>
             </div>
 
@@ -177,29 +176,39 @@
             <div id="tiles-diff-group" class="form-group">
                 <label>Tile View Size (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy" selected>Easy (~250 km Large Region)</option>
-                    <option value="medium">Medium (~60 km Metropolitan Area)</option>
-                    <option value="hard">Hard (~15 km Local Detail)</option>
+                    <option value="easy" selected>Easy (250 km Large Region)</option>
+                    <option value="medium">Medium (60 km Metropolitan Area)</option>
+                    <option value="hard">Hard (15 km Local Detail)</option>
                 </select>
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
                 <label>City Category:</label>
                 <select id="cities-difficulty">
-                    <option value="easy">Easy (Top 15% Megacities)</option>
+                    <option value="easy">Easy (Top Megacities)</option>
                     <option value="medium" selected>Medium (Mid-sized cities)</option>
                     <option value="hard">Hard (Smaller Towns)</option>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label>Round Timer:</label>
-                <select id="timer-select">
-                    <option value="0" selected>Unlimited Time</option>
-                    <option value="15">15 Seconds</option>
-                    <option value="30">30 Seconds</option>
-                    <option value="60">60 Seconds</option>
-                </select>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Timer Mode:</label>
+                    <select id="timer-mode">
+                        <option value="round" selected>Per Round</option>
+                        <option value="game">Total Match</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Time Limit:</label>
+                    <select id="timer-select">
+                        <option value="0">Unlimited Time</option>
+                        <option value="30" selected>30 Seconds</option>
+                        <option value="60">60 Seconds</option>
+                        <option value="90">90 Seconds</option>
+                        <option value="120">120 Seconds</option>
+                    </select>
+                </div>
             </div>
 
             <div class="form-group">
@@ -210,6 +219,14 @@
                     <option value="15">15 Rounds</option>
                 </select>
             </div>
+            
+            <!-- Повернутий Мультиплеєр -->
+            <div class="multiplayer-box">
+                <div class="form-group" style="margin: 0;">
+                    <label style="color: #38bdf8;">Multiplayer Room (Seed):</label>
+                    <input type="text" id="room-code" placeholder="Enter Room Code to play with friends (Leave blank for Solo)">
+                </div>
+            </div>
 
             <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;" disabled>Loading points...</button>
         </div>
@@ -219,44 +236,28 @@
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
             <h2>User Profile</h2>
-
             <div style="background: #0f172a; padding: 12px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 12px; color: #94a3b8;">Level Progress:</span>
                     <span id="user-level-display" style="font-weight: 700; color: #38bdf8; font-size: 13px;">Level 1</span>
                 </div>
-                <div class="level-progress-bg">
-                    <div id="xp-progress-fill" class="level-progress-fill"></div>
-                </div>
+                <div class="level-progress-bg"><div id="xp-progress-fill" class="level-progress-fill"></div></div>
                 <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 4px;">
                     <span id="xp-text">0 / 1000 XP</span>
                     <span>Total XP: <span id="total-xp-text">0</span></span>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Username:</label>
                 <input type="text" id="username-input" placeholder="Enter name...">
             </div>
-
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div id="user-games" class="stat-value">0</div>
-                    <div class="stat-label">Games</div>
-                </div>
-                <div class="stat-card">
-                    <div id="user-highscore" class="stat-value">0</div>
-                    <div class="stat-label">Highscore</div>
-                </div>
-                <div class="stat-card">
-                    <div id="user-perfects" class="stat-value">0</div>
-                    <div class="stat-label">Bullseyes</div>
-                </div>
+                <div class="stat-card"><div id="user-games" class="stat-value">0</div><div class="stat-label">Games</div></div>
+                <div class="stat-card"><div id="user-highscore" class="stat-value">0</div><div class="stat-label">Highscore</div></div>
+                <div class="stat-card"><div id="user-perfects" class="stat-value">0</div><div class="stat-label">Bullseyes</div></div>
             </div>
-
             <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 10px;">Achievements:</label>
             <div id="achievements-list" class="achievements-box"></div>
-
             <button class="btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 12px;">Save Profile</button>
             <button class="btn-primary" onclick="closeProfile()" style="width: 100%; margin-top: 6px; background: #475569;">Close</button>
         </div>
@@ -266,84 +267,99 @@
     <div id="end-modal" class="modal-overlay" style="display: none;">
         <div class="modal" style="text-align: center;">
             <h1 style="margin-top:0;">Match Completed!</h1>
-            
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div id="end-score" class="stat-value">0</div>
-                    <div class="stat-label">Final Score</div>
-                </div>
-                <div class="stat-card">
-                    <div id="end-xp" class="stat-value">+0 XP</div>
-                    <div class="stat-label">XP Gained</div>
-                </div>
-                <div class="stat-card">
-                    <div id="end-bullseyes" class="stat-value">0</div>
-                    <div class="stat-label">Bullseyes</div>
-                </div>
+                <div class="stat-card"><div id="end-score" class="stat-value">0</div><div class="stat-label">Final Score</div></div>
+                <div class="stat-card"><div id="end-xp" class="stat-value">+0 XP</div><div class="stat-label">XP Gained</div></div>
+                <div class="stat-card"><div id="end-bullseyes" class="stat-value">0</div><div class="stat-label">Bullseyes</div></div>
             </div>
-
             <div class="rounds-breakdown" id="rounds-breakdown-list"></div>
-
             <button onclick="openLobby()" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;">Back to Main Menu</button>
         </div>
     </div>
 
     <script>
-    // ISO Mapping for full country flags rendering
-    const COUNTRY_ISO_MAP = {
-        "Andorra": "ad", "United Arab Emirates": "ae", "Afghanistan": "af", "Albania": "al", "Armenia": "am",
-        "Angola": "ao", "Argentina": "ar", "Austria": "at", "Australia": "au", "Azerbaijan": "az",
-        "Bosnia and Herzegovina": "ba", "Bangladesh": "bd", "Belgium": "be", "Bulgaria": "bg", "Bahrain": "bh",
-        "Bolivia": "bo", "Brazil": "br", "Belarus": "by", "Canada": "ca", "Switzerland": "ch", "Chile": "cl",
-        "China": "cn", "Colombia": "co", "Costa Rica": "cr", "Cuba": "cu", "Czech Republic": "cz", "Germany": "de",
-        "Denmark": "dk", "Algeria": "dz", "Ecuador": "ec", "Estonia": "ee", "Egypt": "eg", "Spain": "es",
-        "Finland": "fi", "France": "fr", "United Kingdom": "gb", "Georgia": "ge", "Greece": "gr", "Guatemala": "gt",
-        "Croatia": "hr", "Hungary": "hu", "Indonesia": "id", "Ireland": "ie", "Israel": "il", "India": "in",
-        "Iraq": "iq", "Iran": "ir", "Iceland": "is", "Italy": "it", "Jordan": "jo", "Japan": "jp", "Kenya": "ke",
-        "South Korea": "kr", "Kazakhstan": "kz", "Lithuania": "lt", "Luxembourg": "lu", "Latvia": "lv",
-        "Morocco": "ma", "Moldova": "md", "Montenegro": "me", "Mexico": "mx", "Malaysia": "my", "Nigeria": "ng",
-        "Netherlands": "nl", "Norway": "no", "New Zealand": "nz", "Peru": "pe", "Philippines": "ph", "Pakistan": "pk",
-        "Poland": "pl", "Portugal": "pt", "Paraguay": "py", "Qatar": "qa", "Romania": "ro", "Serbia": "rs",
-        "Saudi Arabia": "sa", "Sweden": "se", "Singapore": "sg", "Slovakia": "sk", "Slovenia": "si", "Thailand": "th",
-        "Tunisia": "tn", "Turkey": "tr", "Taiwan": "tw", "Ukraine": "ua", "United States": "us", "Uruguay": "uy",
-        "Uzbekistan": "uz", "Venezuela": "ve", "Vietnam": "vn", "South Africa": "za"
+    // 1. ВАЖЛИВЕ ВИПРАВЛЕННЯ СЛОВНИКА КРАЇН (Із 2-літерного коду в повну назву)
+    const ISO_TO_COUNTRY = {
+        "AD": "Andorra", "AE": "United Arab Emirates", "AF": "Afghanistan", "AL": "Albania",
+        "AM": "Armenia", "AO": "Angola", "AR": "Argentina", "AT": "Austria", "AU": "Australia",
+        "AZ": "Azerbaijan", "BA": "Bosnia and Herzegovina", "BD": "Bangladesh", "BE": "Belgium",
+        "BG": "Bulgaria", "BH": "Bahrain", "BO": "Bolivia", "BR": "Brazil", "BY": "Belarus",
+        "CA": "Canada", "CH": "Switzerland", "CL": "Chile", "CN": "China", "CO": "Colombia",
+        "CR": "Costa Rica", "CU": "Cuba", "CZ": "Czech Republic", "DE": "Germany", "DK": "Denmark",
+        "DZ": "Algeria", "EC": "Ecuador", "EE": "Estonia", "EG": "Egypt", "ES": "Spain",
+        "FI": "Finland", "FR": "France", "GB": "United Kingdom", "GE": "Georgia", "GR": "Greece",
+        "GT": "Guatemala", "HR": "Croatia", "HU": "Hungary", "ID": "Indonesia", "IE": "Ireland",
+        "IL": "Israel", "IN": "India", "IQ": "Iraq", "IR": "Iran", "IS": "Iceland", "IT": "Italy",
+        "JO": "Jordan", "JP": "Japan", "KE": "Kenya", "KR": "South Korea", "KZ": "Kazakhstan",
+        "LT": "Lithuania", "LU": "Luxembourg", "LV": "Latvia", "MA": "Morocco", "MD": "Moldova",
+        "ME": "Montenegro", "MX": "Mexico", "MY": "Malaysia", "NG": "Nigeria", "NL": "Netherlands",
+        "NO": "Norway", "NZ": "New Zealand", "PE": "Peru", "PH": "Philippines", "PK": "Pakistan",
+        "PL": "Poland", "PT": "Portugal", "PY": "Paraguay", "QA": "Qatar", "RO": "Romania",
+        "RS": "Serbia", "RU": "Russia", "SA": "Saudi Arabia", "SE": "Sweden", "SG": "Singapore",
+        "SK": "Slovakia", "SI": "Slovenia", "TH": "Thailand", "TN": "Tunisia", "TR": "Turkey",
+        "TW": "Taiwan", "UA": "Ukraine", "US": "United States", "UY": "Uruguay", "UZ": "Uzbekistan",
+        "VE": "Venezuela", "VN": "Vietnam", "ZA": "South Africa"
     };
 
-    function getCountryHTML(name) {
-        if (!name) return "Unknown Country";
-        const code = COUNTRY_ISO_MAP[name];
-        if (!code) return name;
-        return `<img src="https://flagcdn.com/20x15/${code}.png" class="flag-img" alt="${name}"> ${name}`;
+    function getCountryHTML(code) {
+        if (!code) return "Unknown";
+        const cCode = code.trim().toUpperCase();
+        const fullName = ISO_TO_COUNTRY[cCode] || cCode;
+        if (cCode.length === 2) {
+            return `<img src="https://flagcdn.com/20x15/${cCode.toLowerCase()}.png" class="flag-img" alt="${fullName}"> ${fullName}`;
+        }
+        return fullName; // fallback
     }
 
-    // Auto-restore progress across older storage keys if present
+    // Multiplayer Seed Generator
+    function xmur3(str) {
+        let h = 1779033703 ^ str.length;
+        for(let i = 0; i < str.length; i++) {
+            h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+            h = h << 13 | h >>> 19;
+        }
+        return function() {
+            h = Math.imul(h ^ (h >>> 16), 2246822507);
+            h = Math.imul(h ^ (h >>> 13), 3266489909);
+            return (h ^= h >>> 16) >>> 0;
+        }
+    }
+    function mulberry32(a) {
+        return function() {
+          var t = a += 0x6D2B79F5;
+          t = Math.imul(t ^ t >>> 15, t | 1);
+          t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+    }
+    let myRNG = Math.random; // Default to normal random
+
+    function shuffle(array) {
+        let m = array.length, t, i;
+        while (m) {
+            i = Math.floor(myRNG() * m--);
+            t = array[m]; array[m] = array[i]; array[i] = t;
+        }
+        return array;
+    }
+
+    // Load User
     function loadSavedUser() {
-        const keys = ['geo_user_v5', 'geo_user_v4', 'geo_user_v3', 'geo_user'];
+        const keys = ['geo_user_v5', 'geo_user_v4', 'geo_user'];
         for (let key of keys) {
             const data = localStorage.getItem(key);
-            if (data) {
-                try { return JSON.parse(data); } catch(e){}
-            }
+            if (data) { try { return JSON.parse(data); } catch(e){} }
         }
-        return {
-            name: 'Player' + Math.floor(1000 + Math.random() * 9000),
-            gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, achievements: []
-        };
+        return { name: 'Player' + Math.floor(1000+Math.random()*9000), gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, achievements: [] };
     }
-
     let currentUser = loadSavedUser();
-
     function calculateLevel(xp) { return Math.floor((xp || 0) / 1000) + 1; }
-
-    function saveUserData() {
-        localStorage.setItem('geo_user_v5', JSON.stringify(currentUser));
-        updateProfileUI();
-    }
-
+    function saveUserData() { localStorage.setItem('geo_user_v5', JSON.stringify(currentUser)); updateProfileUI(); }
+    
     const ACHIEVEMENTS_DEF = [
         { id: 'first_game', icon: '🎮', title: 'Rookie Traveler', desc: 'Play your first game' },
         { id: 'bullseye', icon: '🎯', title: 'Sharpshooter', desc: 'Get a 5,000 pts perfect hit' },
-        { id: 'high_score', icon: '🏆', title: 'Map Master', desc: 'Score over 20,000 points in one match' }
+        { id: 'high_score', icon: '🏆', title: 'Map Master', desc: 'Score over 20,000 points' }
     ];
 
     function checkAchievements() {
@@ -355,64 +371,46 @@
     }
 
     function updateProfileUI() {
-        const currentLvl = calculateLevel(currentUser.xp);
-        const progressInLevel = (currentUser.xp || 0) % 1000;
-        const pct = (progressInLevel / 1000) * 100;
-
-        document.getElementById('level-badge-top').textContent = `Lvl ${currentLvl}`;
-        document.getElementById('user-level-display').textContent = `Level ${currentLvl}`;
-        document.getElementById('xp-progress-fill').style.width = `${pct}%`;
-        document.getElementById('xp-text').textContent = `${progressInLevel} / 1000 XP`;
+        const lvl = calculateLevel(currentUser.xp);
+        const progress = (currentUser.xp || 0) % 1000;
+        document.getElementById('level-badge-top').textContent = `Lvl ${lvl}`;
+        document.getElementById('user-level-display').textContent = `Level ${lvl}`;
+        document.getElementById('xp-progress-fill').style.width = `${(progress/1000)*100}%`;
+        document.getElementById('xp-text').textContent = `${progress} / 1000 XP`;
         document.getElementById('total-xp-text').textContent = currentUser.xp || 0;
-
         document.getElementById('username-display').textContent = currentUser.name;
         document.getElementById('username-input').value = currentUser.name;
         document.getElementById('user-games').textContent = currentUser.gamesPlayed || 0;
         document.getElementById('user-highscore').textContent = currentUser.highScore || 0;
         document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
-
+        
         const achList = document.getElementById('achievements-list');
         achList.innerHTML = '';
-        ACHIEVEMENTS_DEF.forEach(ach => {
-            const unlocked = currentUser.achievements && currentUser.achievements.includes(ach.id);
-            achList.innerHTML += `
-                <div class="achievement-item" style="opacity: ${unlocked ? '1' : '0.4'}">
-                    <span class="ach-icon">${ach.icon}</span>
-                    <div>
-                        <strong style="color: ${unlocked ? '#38bdf8' : '#94a3b8'}">${ach.title}</strong>
-                        <div style="font-size:10px; color:#64748b;">${ach.desc} ${unlocked ? '✓' : ''}</div>
-                    </div>
-                </div>`;
+        ACHIEVEMENTS_DEF.forEach(a => {
+            const unlocked = currentUser.achievements && currentUser.achievements.includes(a.id);
+            achList.innerHTML += `<div class="achievement-item" style="opacity: ${unlocked?1:0.4}"><span class="ach-icon">${a.icon}</span>
+                <div><strong style="color: ${unlocked?'#38bdf8':'#94a3b8'}">${a.title}</strong>
+                <div style="font-size:10px; color:#64748b;">${a.desc} ${unlocked?'✓':''}</div></div></div>`;
         });
     }
 
     function saveProfile() {
         const val = document.getElementById('username-input').value.trim();
         if (val) currentUser.name = val;
-        saveUserData();
-        closeProfile();
+        saveUserData(); closeProfile();
     }
-
     function openProfileModal() { updateProfileUI(); document.getElementById('profile-modal').style.display = 'flex'; }
-    document.getElementById('profile-btn').addEventListener('click', openProfileModal);
     function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
+    document.getElementById('profile-btn').addEventListener('click', openProfileModal);
 
-    // === Satellite Map: Zoom IN is enabled, Zoom OUT is locked at tile size ===
-    const satMap = L.map('satellite', { 
-        zoomControl: true, 
-        attributionControl: false
-    }).setView([20, 0], 2);
-    
+    // Maps Setup
+    const satMap = L.map('satellite', { zoomControl: true, attributionControl: false }).setView([20, 0], 2);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
 
     const guessMap = L.map('guessmap', { maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 0.8 }).setView([20, 0], 2);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19, noWrap: true }).addTo(guessMap);
 
-    const guessIcon = L.divIcon({
-        className: '',
-        html: '<div style="width:16px;height:16px;border-radius:50%;background:#0284c7;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);"></div>',
-        iconSize: [16, 16], iconAnchor: [8, 8]
-    });
+    const guessIcon = L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#0284c7;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
 
     let satMaskLayer = null;
     function updateSatelliteMask(bounds) {
@@ -424,9 +422,7 @@
             [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
             [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
         ];
-        satMaskLayer = L.polygon([giantWorld, innerHole], {
-            color: '#000', fillColor: '#0f172a', fillOpacity: 0.95, stroke: false
-        }).addTo(satMap);
+        satMaskLayer = L.polygon([giantWorld, innerHole], { color: '#000', fillColor: '#0f172a', fillOpacity: 0.95, stroke: false }).addTo(satMap);
     }
 
     let allPoints = [], activePool = [];
@@ -434,61 +430,46 @@
     let totalRounds = 5, round = 0, totalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
-    let phase = 'guessing', gameHistory = [], timerInterval = null, timerLeft = 0;
+    let phase = 'guessing', gameHistory = [], timerInterval = null, timerLeft = 0, timerMode = 'round';
 
-    const statusEl = document.getElementById('status');
-    const scoreEl = document.getElementById('score');
-    const btn = document.getElementById('btn');
-    const timerDisplay = document.getElementById('timer-display');
+    const statusEl = document.getElementById('status'), scoreEl = document.getElementById('score'), btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer-display');
 
-    function shuffle(array) {
-        let m = array.length, t, i;
-        while (m) {
-            i = Math.floor(Math.random() * m--);
-            t = array[m]; array[m] = array[i]; array[i] = t;
-        }
-        return array;
-    }
+    // Parse CSV
+    fetch('points.csv').then(r => r.text()).then(text => {
+        const lines = text.trim().split('\n');
+        lines.shift();
+        allPoints = lines.map(line => {
+            const p = line.split(',');
+            return {
+                lng: parseFloat(p[0]), lat: parseFloat(p[1]),
+                name: p[2] ? p[2].trim() : '', country: p[3] ? p[3].trim() : '', pop: p[4] ? parseInt(p[4]) : 0
+            };
+        }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
-    // Load CSV & setup custom country picker
-    fetch('points.csv')
-        .then(r => r.text())
-        .then(text => {
-            const lines = text.trim().split('\n');
-            lines.shift();
-            allPoints = lines.map(line => {
-                const p = line.split(',');
-                return {
-                    lng: parseFloat(p[0]), lat: parseFloat(p[1]),
-                    name: p[2] ? p[2].trim() : '', country: p[3] ? p[3].trim() : '', pop: p[4] ? parseInt(p[4]) : 0
-                };
-            }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
-
-            const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
-            const dropdownList = document.getElementById('country-dropdown-list');
-            dropdownList.innerHTML = '';
-            
-            countries.forEach(c => {
-                const item = document.createElement('div');
-                item.className = 'custom-dropdown-item';
-                item.innerHTML = getCountryHTML(c);
-                item.onclick = () => {
-                    selectedCountry = c;
-                    document.getElementById('country-dropdown-selected').innerHTML = getCountryHTML(c);
-                    toggleCountryDropdown();
-                };
-                dropdownList.appendChild(item);
-            });
-
-            if (countries.length > 0) {
-                selectedCountry = countries[0];
-                document.getElementById('country-dropdown-selected').innerHTML = getCountryHTML(selectedCountry);
-            }
-
-            const startBtn = document.getElementById('start-btn');
-            startBtn.textContent = 'Start Game';
-            startBtn.disabled = false;
+        const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
+        const dropdownList = document.getElementById('country-dropdown-list');
+        dropdownList.innerHTML = '';
+        
+        countries.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'custom-dropdown-item';
+            item.innerHTML = getCountryHTML(c);
+            item.onclick = () => {
+                selectedCountry = c;
+                document.getElementById('country-dropdown-selected').innerHTML = getCountryHTML(c);
+                toggleCountryDropdown();
+            };
+            dropdownList.appendChild(item);
         });
+
+        if (countries.length > 0) {
+            selectedCountry = countries[0];
+            document.getElementById('country-dropdown-selected').innerHTML = getCountryHTML(selectedCountry);
+        }
+
+        document.getElementById('start-btn').textContent = 'Start Game';
+        document.getElementById('start-btn').disabled = false;
+    });
 
     function toggleCountryDropdown() {
         const list = document.getElementById('country-dropdown-list');
@@ -499,38 +480,32 @@
         currentGameMode = mode;
         document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
         document.querySelector(`.mode-card[data-mode="${mode}"]`).classList.add('active');
-
         document.getElementById('tiles-diff-group').style.display = (mode === 'tiles' || mode === 'country') ? 'block' : 'none';
         document.getElementById('cities-diff-group').style.display = mode === 'cities' ? 'block' : 'none';
         document.getElementById('country-select-group').style.display = mode === 'country' ? 'block' : 'none';
     }
 
-    function openLobby() {
-        document.getElementById('end-modal').style.display = 'none';
-        document.getElementById('lobby-modal').style.display = 'flex';
-    }
+    function openLobby() { document.getElementById('end-modal').style.display = 'none'; document.getElementById('lobby-modal').style.display = 'flex'; }
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
-    // Large Tile Deltas restored (Hundreds of kilometers)
-    function getTileDelta() {
-        if (currentGameMode === 'cities') return 0.008; // ~1km City Street box
-        const diff = document.getElementById('tiles-difficulty').value;
-        if (diff === 'easy') return 1.25;       // ~250 km Large Tile Frame
-        if (diff === 'medium') return 0.35;    // ~60 km Regional Tile Frame
-        return 0.08;                           // ~15 km Local Detail Frame
-    }
-
     document.getElementById('start-btn').addEventListener('click', () => {
-        let pool = [];
+        // Setup RNG for Multiplayer
+        const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+        if (roomCode) {
+            let seed = xmur3(roomCode);
+            myRNG = mulberry32(seed());
+        } else {
+            myRNG = Math.random;
+        }
 
+        let pool = [];
         if (currentGameMode === 'country') {
             pool = allPoints.filter(p => p.country === selectedCountry);
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             let cityPool = allPoints.filter(p => p.pop > 10000);
             if (cityPool.length === 0) cityPool = allPoints.filter(p => p.name !== '');
-
-            cityPool.sort((a, b) => b.pop - a.pop);
+            cityPool.sort((a, b) => b.pop - a.pop); // Sort deterministically before slice
             const total = cityPool.length;
             if (diff === 'easy') pool = cityPool.slice(0, Math.floor(total * 0.15));
             else if (diff === 'medium') pool = cityPool.slice(Math.floor(total * 0.15), Math.floor(total * 0.50));
@@ -541,7 +516,14 @@
 
         if (pool.length === 0) pool = [...allPoints];
         activePool = shuffle([...pool]);
+        
         totalRounds = parseInt(document.getElementById('rounds-select').value);
+        timerMode = document.getElementById('timer-mode').value;
+        const totalTime = parseInt(document.getElementById('timer-select').value);
+        
+        if (timerMode === 'game' && totalTime > 0) {
+            timerLeft = totalTime;
+        }
 
         document.getElementById('lobby-modal').style.display = 'none';
         startMatch();
@@ -554,8 +536,7 @@
         if (currentGameMode === 'country') {
             const cPoints = allPoints.filter(p => p.country === selectedCountry);
             if (cPoints.length > 0) {
-                const lats = cPoints.map(p => p.lat);
-                const lngs = cPoints.map(p => p.lng);
+                const lats = cPoints.map(p => p.lat); const lngs = cPoints.map(p => p.lng);
                 guessMap.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]]);
             }
         } else {
@@ -563,14 +544,13 @@
         }
 
         setTimeout(() => {
-            satMap.invalidateSize();
-            guessMap.invalidateSize();
+            satMap.invalidateSize(); guessMap.invalidateSize();
             startRound();
         }, 50);
     }
 
     function startRound() {
-        if (timerInterval) clearInterval(timerInterval);
+        if (timerInterval && timerMode === 'round') clearInterval(timerInterval);
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
         guessMarker = targetRect = line = guess = null;
         phase = 'guessing';
@@ -578,41 +558,53 @@
         if (activePool.length === 0) activePool = shuffle([...allPoints]);
         answer = activePool.pop();
 
-        const d = getTileDelta();
-        currentBounds = L.latLngBounds([
-            [answer.lat - d, answer.lng - d],
-            [answer.lat + d, answer.lng + d]
-        ]);
+        // 3. Точні розміри World Tiles та динаміка Міст
+        let delta;
+        if (currentGameMode === 'cities') {
+            let pop = answer.pop || 50000;
+            let radiusKm = 2 + (Math.sqrt(pop) / 80); // Динамічний розмір від населення
+            radiusKm = Math.min(25, Math.max(3, radiusKm)); // Між 3 і 25 км
+            delta = radiusKm / 111;
+        } else {
+            const diff = document.getElementById('tiles-difficulty').value;
+            if (diff === 'easy') delta = 250 / 111 / 2;       // 250 km
+            else if (diff === 'medium') delta = 60 / 111 / 2; // 60 km
+            else delta = 15 / 111 / 2;                        // 15 km
+        }
 
-        // SAT MAP: FIT TILE, ALLOW ZOOM-IN, BLOCK ZOOM-OUT PAST BOX!
-        satMap.fitBounds(currentBounds);
+        currentBounds = L.latLngBounds([ [answer.lat - delta, answer.lng - delta], [answer.lat + delta, answer.lng + delta] ]);
+
+        // 4. Фікс камери: pad() дозволяє бачити всю зону без свайпів!
+        satMap.fitBounds(currentBounds.pad(0.1));
         updateSatelliteMask(currentBounds);
 
-        const minZoomLevel = satMap.getBoundsZoom(currentBounds, true);
-        satMap.setMinZoom(minZoomLevel); // Cannot zoom out past the tile boundary!
-        satMap.setMaxZoom(18);           // CAN zoom in deep to inspect!
-        satMap.setMaxBounds(currentBounds);
-        satMap.options.maxBoundsViscosity = 1.0;
+        satMap.setMaxBounds(currentBounds.pad(0.2)); 
+        satMap.setMinZoom(satMap.getBoundsZoom(currentBounds, false)); // Зум не блокує перегляд усієї зони
+        satMap.setMaxZoom(18);
 
         round++;
         statusEl.textContent = `Round ${round} of ${totalRounds}`;
-        btn.textContent = 'Check';
-        btn.disabled = true;
+        btn.textContent = 'Check'; btn.disabled = true;
 
-        const timerSecs = parseInt(document.getElementById('timer-select').value);
-        if (timerSecs > 0) {
-            timerLeft = timerSecs;
+        // Таймери
+        const timerSetting = parseInt(document.getElementById('timer-select').value);
+        if (timerSetting > 0) {
+            if (timerMode === 'round') timerLeft = timerSetting;
+            
             timerDisplay.textContent = `${timerLeft}s`;
             timerDisplay.style.display = 'inline-block';
-            timerInterval = setInterval(() => {
-                timerLeft--;
-                timerDisplay.textContent = `${timerLeft}s`;
-                if (timerLeft <= 0) {
-                    clearInterval(timerInterval);
-                    if (!guess) guess = [0, 0];
-                    processGuess();
-                }
-            }, 1000);
+            
+            if (timerMode === 'round' || (timerMode === 'game' && round === 1)) {
+                timerInterval = setInterval(() => {
+                    timerLeft--;
+                    timerDisplay.textContent = `${timerLeft}s`;
+                    if (timerLeft <= 0) {
+                        if (timerMode === 'round') clearInterval(timerInterval);
+                        if (!guess) guess = [0, 0];
+                        processGuess();
+                    }
+                }, 1000);
+            }
         } else {
             timerDisplay.style.display = 'none';
         }
@@ -622,7 +614,6 @@
         if (phase !== 'guessing') return;
         const wrapped = e.latlng.wrap();
         guess = [wrapped.lat, wrapped.lng];
-
         if (guessMarker) guessMap.removeLayer(guessMarker);
         guessMarker = L.marker(guess, { icon: guessIcon }).addTo(guessMap);
         btn.disabled = false;
@@ -631,13 +622,13 @@
     btn.addEventListener('click', () => {
         if (phase === 'guessing') processGuess();
         else if (phase === 'revealed') {
-            if (round >= totalRounds) showEndGameModal();
+            if (round >= totalRounds || (timerMode === 'game' && timerLeft <= 0)) showEndGameModal();
             else startRound();
         }
     });
 
     function processGuess() {
-        if (timerInterval) clearInterval(timerInterval);
+        if (timerMode === 'round' && timerInterval) clearInterval(timerInterval);
         if (!guess) return;
 
         const guessLatLng = L.latLng(guess);
@@ -656,10 +647,7 @@
         totalScore += roundScore;
         gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore });
 
-        targetRect = L.rectangle(currentBounds, {
-            color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.3
-        }).addTo(guessMap);
-
+        targetRect = L.rectangle(currentBounds, { color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.3 }).addTo(guessMap);
         const center = [answer.lat, answer.lng];
         if (!isInside) {
             line = L.polyline([guess, center], { color: '#38bdf8', weight: 2, dashArray: '5,5' }).addTo(guessMap);
@@ -676,34 +664,34 @@
         statusEl.innerHTML = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
-        btn.textContent = (round >= totalRounds) ? 'Finish Game' : 'Next Round';
+        
+        if (timerMode === 'game' && timerLeft <= 0) btn.textContent = 'Finish Game (Time Up)';
+        else btn.textContent = (round >= totalRounds) ? 'Finish Game' : 'Next Round';
+        
         btn.disabled = false;
     }
 
     function showEndGameModal() {
-        phase = 'finished';
-        btn.disabled = true;
-
+        if (timerInterval) clearInterval(timerInterval);
+        phase = 'finished'; btn.disabled = true;
         currentUser.gamesPlayed = (currentUser.gamesPlayed || 0) + 1;
         if (totalScore > (currentUser.highScore || 0)) currentUser.highScore = totalScore;
         const earnedXP = Math.round(totalScore * 0.2);
         currentUser.xp = (currentUser.xp || 0) + earnedXP;
-
         checkAchievements();
 
         const breakdownList = document.getElementById('rounds-breakdown-list');
         breakdownList.innerHTML = '';
-
         let bullseyesCount = 0;
+        
         gameHistory.forEach(h => {
             if (h.isInside) bullseyesCount++;
             const countryHtml = getCountryHTML(h.answer.country);
             const locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
-            breakdownList.innerHTML += `
-                <div class="breakdown-row">
-                    <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
-                    <span style="color: ${h.isInside ? '#10b981' : '#38bdf8'}; font-weight:700;">+${h.roundScore} pts (${h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km'})</span>
-                </div>`;
+            breakdownList.innerHTML += `<div class="breakdown-row">
+                <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
+                <span style="color: ${h.isInside ? '#10b981' : '#38bdf8'}; font-weight:700;">+${h.roundScore} pts (${h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km'})</span>
+            </div>`;
         });
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} pts`;
@@ -712,11 +700,7 @@
         document.getElementById('end-modal').style.display = 'flex';
     }
 
-    window.addEventListener('resize', () => {
-        satMap.invalidateSize();
-        guessMap.invalidateSize();
-    });
-
+    window.addEventListener('resize', () => { satMap.invalidateSize(); guessMap.invalidateSize(); });
     updateProfileUI();
     </script>
 </body>
