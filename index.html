@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>World Tiles - Precise City & Country Scaling</title>
+    <title>World Tiles - Precision City & Country Game</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -11,7 +11,6 @@
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
         body { margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow: hidden; }
 
-        /* Top Bar */
         #top-bar {
             position: fixed; top: 0; left: 0; right: 0; height: 60px;
             background: #1e293b; border-bottom: 1px solid #334155;
@@ -27,19 +26,17 @@
         }
         .avatar-btn:hover { background: #475569; }
 
-        /* Game Layout */
         #game { display: flex; height: calc(100vh - 60px); margin-top: 60px; position: relative; }
         .panel { flex: 1; position: relative; }
         #satellite, #guessmap { position: absolute; inset: 0; }
         .divider { width: 4px; background: #334155; z-index: 400; }
 
-        /* HUD Bar */
         #hud {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             z-index: 1000; background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px 24px; border-radius: 16px; display: flex; align-items: center;
-            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 500px;
+            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 520px;
         }
         .status-text { font-size: 13px; font-weight: 500; }
         .score-badge { background: #0284c7; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
@@ -53,7 +50,6 @@
         .btn-primary:hover:not(:disabled) { background: #0369a1; transform: translateY(-1px); }
         .btn-primary:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
 
-        /* Modals Overlay */
         .modal-overlay {
             position: fixed; inset: 0; z-index: 2000; background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
@@ -66,7 +62,6 @@
         }
         .modal h2 { margin-top: 0; font-size: 22px; color: #fff; }
 
-        /* Mode Selectors */
         .mode-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .mode-card {
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
@@ -97,30 +92,23 @@
             display: flex; align-items: center; gap: 10px; opacity: 0.35; filter: grayscale(1);
         }
         .achieve-item.unlocked { opacity: 1; filter: grayscale(0); border-color: #38bdf8; }
-        .achieve-icon { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
-        .achieve-title { font-size: 11px; font-weight: 700; color: #fff; }
-        .achieve-desc { font-size: 9px; color: #94a3b8; }
 
-        .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 140px; overflow-y: auto; }
+        .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 160px; overflow-y: auto; }
         .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
         .breakdown-row:last-child { border-bottom: none; }
 
         .mp-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-top: 10px; text-align: center; }
         .mp-code { font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 2px; margin: 6px 0; user-select: all; }
 
-        /* Winner Result Banner */
-        .winner-banner { font-size: 26px; font-weight: 900; margin: 10px 0 4px 0; letter-spacing: 1px; }
+        .winner-banner { font-size: 26px; font-weight: 900; margin: 10px 0 4px 0; }
         .win-text { color: #10b981; }
         .lose-text { color: #ef4444; }
-        .draw-text { color: #f59e0b; }
 
         @media (max-width: 768px) {
-            #top-bar { padding: 0 12px; }
-            .brand { font-size: 16px; }
             #game { flex-direction: column; }
             .divider { width: 100%; height: 4px; }
-            #hud { min-width: unset; width: calc(100% - 24px); bottom: 12px; padding: 8px 12px; gap: 6px; }
-            .status-text { font-size: 10px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            #hud { min-width: unset; width: calc(100% - 24px); bottom: 12px; padding: 8px 12px; }
+            .status-text { font-size: 11px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .modal { width: 95%; padding: 16px; }
             .mode-selector, .stats-grid, .achievements-list { grid-template-columns: 1fr; }
         }
@@ -128,23 +116,21 @@
 </head>
 <body>
 
-    <!-- Top Navigation Bar -->
     <div id="top-bar">
         <div class="brand">World Tiles</div>
         <div class="user-profile">
             <span id="level-badge-top" class="level-badge">Lvl 1</span>
-            <button id="profile-btn" class="avatar-btn"><span id="username-display">Player</span></button>
-            <button id="menu-btn" class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Main Menu</button>
+            <button id="profile-btn" class="avatar-btn"><span id="username-display">Гравець</span></button>
+            <button id="menu-btn" class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Меню</button>
         </div>
     </div>
 
-    <!-- Main Game View -->
     <div id="game">
         <div id="hud">
-            <span id="status" class="status-text">Round 1</span>
-            <span id="score" class="score-badge">You: 0 pts</span>
-            <span id="opp-score" class="opp-score-badge">Opponent: 0 pts</span>
-            <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Check</button>
+            <span id="status" class="status-text">Раунд 1</span>
+            <span id="score" class="score-badge">Ви: 0 pts</span>
+            <span id="opp-score" class="opp-score-badge">Суперник: 0 pts</span>
+            <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Перевірити</button>
         </div>
 
         <div class="panel"><div id="satellite"></div></div>
@@ -152,144 +138,129 @@
         <div class="panel"><div id="guessmap"></div></div>
     </div>
 
-    <!-- Menu / Lobby Modal -->
+    <!-- Lobby Modal -->
     <div id="lobby-modal" class="modal-overlay">
         <div class="modal">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h2 style="margin:0;">Lobby Settings</h2>
-                <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
+                <h2 style="margin:0;">Налаштування гри</h2>
+                <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Профіль</button>
             </div>
             
             <div class="form-group">
-                <label>Match Type:</label>
+                <label>Режим гри:</label>
                 <select id="match-type-select" onchange="toggleMatchType()">
-                    <option value="solo" selected>Singleplayer</option>
-                    <option value="online">Multiplayer (Online PeerJS)</option>
+                    <option value="solo" selected>Одиночна гра</option>
+                    <option value="online">Онлайн дуель (PeerJS)</option>
                 </select>
             </div>
 
-            <!-- Multiplayer Room Setup -->
             <div id="mp-setup-box" class="mp-box" style="display: none;">
                 <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;">
-                    <button class="btn-primary" onclick="initHostRoom()" style="padding: 6px 12px; font-size: 12px;">Create Room</button>
-                    <button class="btn-primary" onclick="showJoinInput()" style="padding: 6px 12px; font-size: 12px; background: #334155;">Join Room</button>
+                    <button class="btn-primary" onclick="initHostRoom()" style="padding: 6px 12px; font-size: 12px;">Створити кімнату</button>
+                    <button class="btn-primary" onclick="showJoinInput()" style="padding: 6px 12px; font-size: 12px; background: #334155;">Приєднатися</button>
                 </div>
                 <div id="mp-host-info" style="display: none;">
-                    <span style="font-size: 11px; color: #94a3b8;">Share Room Code with your friend:</span>
-                    <div id="room-code-display" class="mp-code">GENERATING...</div>
-                    <span id="mp-status-text" style="font-size: 11px; color: #f59e0b;">Waiting for opponent...</span>
+                    <span style="font-size: 11px; color: #94a3b8;">Код кімнати:</span>
+                    <div id="room-code-display" class="mp-code">ГЕНЕРАЦІЯ...</div>
+                    <span id="mp-status-text" style="font-size: 11px; color: #f59e0b;">Очікування суперника...</span>
                 </div>
                 <div id="mp-join-info" style="display: none;">
-                    <input type="text" id="join-code-input" placeholder="Enter Room Code..." style="text-align: center; font-weight: 700; text-transform: uppercase;">
-                    <button class="btn-primary" onclick="joinRoom()" style="width: 100%; margin-top: 6px; padding: 8px;">Connect to Host</button>
+                    <input type="text" id="join-code-input" placeholder="Введіть код кімнати..." style="text-align: center; font-weight: 700; text-transform: uppercase;">
+                    <button class="btn-primary" onclick="joinRoom()" style="width: 100%; margin-top: 6px; padding: 8px;">Підключитися</button>
                 </div>
             </div>
 
             <div class="mode-selector" style="margin-top: 12px;">
                 <div class="mode-card active" data-mode="tiles" onclick="selectGameMode('tiles')">
                     <h3>World Tiles</h3>
-                    <p>Global random regions</p>
+                    <p>Випадкові регіони світу</p>
                 </div>
                 <div class="mode-card" data-mode="cities" onclick="selectGameMode('cities')">
-                    <h3>Guess City</h3>
-                    <p>Tightly framed city grid</p>
+                    <h3>Міста</h3>
+                    <p>Точний вуличний кадр</p>
                 </div>
                 <div class="mode-card" data-mode="country" onclick="selectGameMode('country')">
-                    <h3>Country Mode</h3>
-                    <p>Explore a specific country</p>
+                    <h3>Окрема Країна</h3>
+                    <p>Гра на карті 1 країни</p>
                 </div>
             </div>
 
-            <!-- Country Selection Group -->
             <div id="country-select-group" class="form-group" style="display: none;">
-                <label>Choose Country:</label>
+                <label>Оберіть країну:</label>
                 <select id="country-select"></select>
-                <div style="margin-top: 6px;">
-                    <label>Country Location Pool:</label>
-                    <select id="country-pool-type">
-                        <option value="all" selected>All Locations (% Proportional Tile)</option>
-                        <option value="cities">Cities Only (Tight Urban Grid)</option>
-                    </select>
-                </div>
             </div>
 
             <div id="tiles-diff-group" class="form-group">
-                <label>Tile View Size (Difficulty):</label>
+                <label>Розмір шмату (Складність):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy">Easy (Large Area)</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard (Small Detailed View)</option>
+                    <option value="easy">Легкий (% від розміру країни)</option>
+                    <option value="medium" selected>Середній</option>
+                    <option value="hard">Важкий (Маленький кадр)</option>
                 </select>
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
-                <label>City Category & Grid Zoom:</label>
+                <label>Категорія міст (Розмір за % в країні):</label>
                 <select id="cities-difficulty">
-                    <option value="easy">Easy (District View / &gt; 3M Pop)</option>
-                    <option value="medium" selected>Medium (Block Grid / 1M - 3M Pop)</option>
-                    <option value="hard">Hard (Street Mesh / 100k - 1M Pop)</option>
-                    <option value="expert">Mega Hard (Tight Alley Mesh / &lt; 100k Pop)</option>
+                    <option value="easy">Легкий (Топ 15% найкрупніших міст)</option>
+                    <option value="medium" selected>Середній (Середні міста)</option>
+                    <option value="hard">Важкий (Малі містечка)</option>
                 </select>
             </div>
 
             <div class="form-group">
-                <label>Rounds Count:</label>
+                <label>Кількість раундів:</label>
                 <select id="rounds-select">
-                    <option value="5" selected>5 Rounds</option>
-                    <option value="10">10 Rounds</option>
-                    <option value="15">15 Rounds</option>
+                    <option value="5" selected>5 раундів</option>
+                    <option value="10">10 раундів</option>
+                    <option value="15">15 раундів</option>
                 </select>
             </div>
 
-            <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;" disabled>Loading Points...</button>
+            <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;" disabled>Завантаження точок...</button>
         </div>
     </div>
 
     <!-- User Profile Modal -->
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
-            <h2>User Profile</h2>
+            <h2>Профіль гравця</h2>
             <div style="background: #0f172a; padding: 10px 14px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: #94a3b8;">Your ID: <strong id="user-id-display" style="color: #38bdf8;">#GEO-0000</strong></span>
-                    <span id="user-level-display" style="font-weight: 700; color: #38bdf8; font-size: 13px;">Level 1</span>
+                    <span style="font-size: 12px; color: #94a3b8;">ID: <strong id="user-id-display" style="color: #38bdf8;">#GEO-0000</strong></span>
+                    <span id="user-level-display" style="font-weight: 700; color: #38bdf8; font-size: 13px;">Рівень 1</span>
                 </div>
                 <div class="level-progress-bg">
                     <div id="xp-progress-fill" class="level-progress-fill"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 4px;">
                     <span id="xp-text">0 / 1000 XP</span>
-                    <span>Total XP: <span id="total-xp-text">0</span></span>
+                    <span>Загальний XP: <span id="total-xp-text">0</span></span>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Username:</label>
-                <input type="text" id="username-input" placeholder="Enter name...">
+                <label>Нікнейм:</label>
+                <input type="text" id="username-input" placeholder="Введіть ім'я...">
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
                     <div id="user-games" class="stat-value">0</div>
-                    <div class="stat-label">Games</div>
+                    <div class="stat-label">Ігор</div>
                 </div>
                 <div class="stat-card">
                     <div id="user-highscore" class="stat-value">0</div>
-                    <div class="stat-label">Highscore</div>
+                    <div class="stat-label">Рекорд</div>
                 </div>
                 <div class="stat-card">
                     <div id="user-perfects" class="stat-value">0</div>
-                    <div class="stat-label">Bullseyes</div>
+                    <div class="stat-label">Точних влучань</div>
                 </div>
             </div>
 
-            <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 8px;">Achievements:</label>
-            <div id="achievements-container" class="achievements-list"></div>
-
-            <div style="display: flex; gap: 10px; margin-top: 14px;">
-                <button class="btn-primary" onclick="saveProfile()" style="flex: 1;">Save</button>
-                <button class="btn-primary" onclick="closeProfile()" style="flex: 1; background: #475569;">Close</button>
-            </div>
+            <button class="btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 10px;">Зберегти</button>
+            <button class="btn-primary" onclick="closeProfile()" style="width: 100%; margin-top: 6px; background: #475569;">Закрити</button>
         </div>
     </div>
 
@@ -297,84 +268,98 @@
     <div id="end-modal" class="modal-overlay" style="display: none;">
         <div class="modal" style="text-align: center;">
             <div id="winner-banner" class="winner-banner"></div>
-            <h1 style="margin-top:0;">Game Completed!</h1>
-            <p id="end-rank" style="font-weight: 600; color: #38bdf8; font-size: 15px; margin-bottom: 8px;"></p>
+            <h1 style="margin-top:0;">Гра завершена!</h1>
             
             <div class="stats-grid">
                 <div class="stat-card">
                     <div id="end-score" class="stat-value">0</div>
-                    <div class="stat-label">Your Score</div>
+                    <div class="stat-label">Ваші очки</div>
                 </div>
                 <div class="stat-card">
                     <div id="end-xp" class="stat-value">+0 XP</div>
-                    <div class="stat-label">XP Earned</div>
+                    <div class="stat-label">Отриманий XP</div>
                 </div>
                 <div class="stat-card">
                     <div id="end-opp-score" class="stat-value">N/A</div>
-                    <div class="stat-label">Opponent Score</div>
+                    <div class="stat-label">Очки суперника</div>
                 </div>
             </div>
 
             <div class="rounds-breakdown" id="rounds-breakdown-list"></div>
 
-            <button onclick="openLobby()" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;">Back to Main Menu</button>
+            <button onclick="openLobby()" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;">Повернутися в меню</button>
         </div>
     </div>
 
     <script>
-    // ISO Country Mapping for Flag Emoji Generation
-    const COUNTRY_ISO_MAP = {
-        "Ukraine": "UA", "Portugal": "PT", "United States": "US", "USA": "US", "Germany": "DE",
-        "France": "FR", "Spain": "ES", "Italy": "IT", "United Kingdom": "GB", "UK": "GB",
-        "Canada": "CA", "Poland": "PL", "Japan": "JP", "China": "CN", "Brazil": "BR",
-        "Australia": "AU", "Turkey": "TR", "Mexico": "MX", "Argentina": "AR", "India": "IN",
-        "Netherlands": "NL", "Belgium": "BE", "Switzerland": "CH", "Austria": "AT", "Sweden": "SE",
-        "Norway": "NO", "Finland": "FI", "Denmark": "DK", "Greece": "GR", "Czech Republic": "CZ",
-        "Slovakia": "SK", "Hungary": "HU", "Romania": "RO", "Bulgaria": "BG", "Croatia": "HR",
-        "Ireland": "IE", "Lithuania": "LT", "Latvia": "LV", "Estonia": "EE", "Iceland": "IS"
+    // Повний словник ISO кодів та назв країн
+    const COUNTRY_DATA = {
+        "Ukraine": { code: "UA", ukr: "Україна" },
+        "Portugal": { code: "PT", ukr: "Португалія" },
+        "United States": { code: "US", ukr: "США" },
+        "USA": { code: "US", ukr: "США" },
+        "Germany": { code: "DE", ukr: "Німеччина" },
+        "France": { code: "FR", ukr: "Франція" },
+        "Spain": { code: "ES", ukr: "Іспанія" },
+        "Italy": { code: "IT", ukr: "Італія" },
+        "United Kingdom": { code: "GB", ukr: "Великобританія" },
+        "UK": { code: "GB", ukr: "Великобританія" },
+        "Canada": { code: "CA", ukr: "Канада" },
+        "Poland": { code: "PL", ukr: "Польща" },
+        "Japan": { code: "JP", ukr: "Японія" },
+        "China": { code: "CN", ukr: "Китай" },
+        "Brazil": { code: "BR", ukr: "Бразилія" },
+        "Australia": { code: "AU", ukr: "Австралія" },
+        "Turkey": { code: "TR", ukr: "Туреччина" },
+        "Mexico": { code: "MX", ukr: "Мексика" },
+        "Argentina": { code: "AR", ukr: "Аргентина" },
+        "India": { code: "IN", ukr: "Індія" },
+        "Netherlands": { code: "NL", ukr: "Нідерланди" },
+        "Belgium": { code: "BE", ukr: "Бельгія" },
+        "Switzerland": { code: "CH", ukr: "Швейцарія" },
+        "Austria": { code: "AT", ukr: "Австрія" },
+        "Sweden": { code: "SE", ukr: "Швеція" },
+        "Norway": { code: "NO", ukr: "Норвегія" },
+        "Finland": { code: "FI", ukr: "Фінляндія" },
+        "Denmark": { code: "DK", ukr: "Данія" },
+        "Greece": { code: "GR", ukr: "Греція" },
+        "Czech Republic": { code: "CZ", ukr: "Чехія" },
+        "Slovakia": { code: "SK", ukr: "Словаччина" },
+        "Hungary": { code: "HU", ukr: "Угорщина" },
+        "Romania": { code: "RO", ukr: "Румунія" },
+        "Bulgaria": { code: "BG", ukr: "Болгарія" },
+        "Croatia": { code: "HR", ukr: "Хорватія" },
+        "Ireland": { code: "IE", ukr: "Ірландія" },
+        "Lithuania": { code: "LT", ukr: "Литва" },
+        "Latvia": { code: "LV", ukr: "Латвія" },
+        "Estonia": { code: "EE", ukr: "Естонія" },
+        "Iceland": { code: "IS", ukr: "Ісландія" }
     };
 
-    function getCountryFlagEmoji(countryName) {
-        const code = COUNTRY_ISO_MAP[countryName];
-        if (!code) return "🌐";
-        return code.toUpperCase().replace(/./g, char => 
+    function getCountryInfo(name) {
+        if (!name) return { name: "Невідома країна", flag: "🌐" };
+        const data = COUNTRY_DATA[name];
+        if (!data) {
+            return { name: name, flag: "🌐" };
+        }
+        const flag = data.code.toUpperCase().replace(/./g, char => 
             String.fromCodePoint(127397 + char.charCodeAt(0))
         );
+        return { name: `${data.ukr} (${name})`, flag: flag };
     }
 
-    const TILES_DIFF = { easy: { d: 2.5 }, medium: { d: 0.6 }, hard: { d: 0.05 } };
-
-    const ACHIEVEMENTS = [
-        { id: 'first_game', title: 'First Steps', desc: 'Play 1 game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>` },
-        { id: 'perfect_hit', title: 'Bullseye', desc: 'Get 5,000 pts in a round', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>` },
-        { id: 'country_expert', title: 'Patriot', desc: 'Play in Country Mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>` },
-        { id: 'mp_match', title: 'Duelist', desc: 'Play an online match', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 1 0 7.75"/></svg>` },
-        { id: 'level_5', title: 'Expert Cartographer', desc: 'Reach Profile Level 5', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` }
-    ];
-
-    let currentUser = JSON.parse(localStorage.getItem('geo_user_v3')) || {
+    let currentUser = JSON.parse(localStorage.getItem('geo_user_v4')) || {
         id: '#GEO-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
-        name: 'Player' + Math.floor(1000 + Math.random() * 9000),
-        gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, level: 1, unlockedAchieve: []
+        name: 'Гравець' + Math.floor(1000 + Math.random() * 9000),
+        gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, level: 1
     };
 
-    function getXpRequiredForLevel(lvl) {
-        if (lvl <= 1) return 0;
-        return Math.floor(1200 * Math.pow(lvl - 1, 1.4));
-    }
-
-    function calculateLevel(xp) {
-        let lvl = 1;
-        while (xp >= getXpRequiredForLevel(lvl + 1)) lvl++;
-        return lvl;
-    }
+    function calculateLevel(xp) { return Math.floor(xp / 1000) + 1; }
 
     function addXP(amount) {
         currentUser.xp += Math.round(amount);
-        const newLevel = calculateLevel(currentUser.xp);
-        currentUser.level = newLevel;
-        if (newLevel >= 5) unlockAchievement('level_5');
-        localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
+        currentUser.level = calculateLevel(currentUser.xp);
+        localStorage.setItem('geo_user_v4', JSON.stringify(currentUser));
         updateProfileUI();
     }
 
@@ -387,52 +372,25 @@
         document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
 
         const currentLvl = calculateLevel(currentUser.xp);
-        const currentLvlXP = getXpRequiredForLevel(currentLvl);
-        const nextLvlXP = getXpRequiredForLevel(currentLvl + 1);
-        const progressInLevel = currentUser.xp - currentLvlXP;
-        const totalNeeded = nextLvlXP - currentLvlXP;
-        const pct = Math.min(100, Math.max(0, (progressInLevel / totalNeeded) * 100));
+        const progressInLevel = currentUser.xp % 1000;
+        const pct = (progressInLevel / 1000) * 100;
 
         document.getElementById('level-badge-top').textContent = `Lvl ${currentLvl}`;
-        document.getElementById('user-level-display').textContent = `Level ${currentLvl}`;
+        document.getElementById('user-level-display').textContent = `Рівень ${currentLvl}`;
         document.getElementById('xp-progress-fill').style.width = `${pct}%`;
-        document.getElementById('xp-text').textContent = `${progressInLevel} / ${totalNeeded} XP`;
+        document.getElementById('xp-text').textContent = `${progressInLevel} / 1000 XP`;
         document.getElementById('total-xp-text').textContent = currentUser.xp;
-
-        const achContainer = document.getElementById('achievements-container');
-        achContainer.innerHTML = '';
-        ACHIEVEMENTS.forEach(a => {
-            const isUnlocked = currentUser.unlockedAchieve.includes(a.id);
-            achContainer.innerHTML += `
-                <div class="achieve-item ${isUnlocked ? 'unlocked' : ''}">
-                    <div class="achieve-icon">${a.icon}</div>
-                    <div>
-                        <div class="achieve-title">${a.title}</div>
-                        <div class="achieve-desc">${a.desc}</div>
-                    </div>
-                </div>`;
-        });
-    }
-
-    function unlockAchievement(id) {
-        if (!currentUser.unlockedAchieve.includes(id)) {
-            currentUser.unlockedAchieve.push(id);
-            localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
-        }
     }
 
     function saveProfile() {
         const inputName = document.getElementById('username-input').value.trim();
         if (inputName) currentUser.name = inputName;
-        localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
+        localStorage.setItem('geo_user_v4', JSON.stringify(currentUser));
         updateProfileUI();
         closeProfile();
     }
 
-    function openProfileModal() {
-        updateProfileUI();
-        document.getElementById('profile-modal').style.display = 'flex';
-    }
+    function openProfileModal() { updateProfileUI(); document.getElementById('profile-modal').style.display = 'flex'; }
     document.getElementById('profile-btn').addEventListener('click', openProfileModal);
     function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
 
@@ -451,30 +409,27 @@
 
     let satMaskLayer = null;
 
+    // Фікс затінення (Leak Mask Protection)
     function updateSatelliteMask(bounds) {
         if (satMaskLayer) satMap.removeLayer(satMaskLayer);
-        const outerWorld = [[90, -180], [90, 180], [-90, 180], [-90, -180]];
+        const giantWorld = [[180, -360], [180, 360], [-180, 360], [-180, -360]];
         const innerHole = [
             [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
             [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
             [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
             [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
         ];
-        satMaskLayer = L.polygon([outerWorld, innerHole], {
-            color: '#000', fillColor: '#0f172a', fillOpacity: 0.85, stroke: false
+        satMaskLayer = L.polygon([giantWorld, innerHole], {
+            color: '#000', fillColor: '#0f172a', fillOpacity: 0.9, stroke: false
         }).addTo(satMap);
     }
 
-    // State Variables
     let allPoints = [], activePointsPool = [], presetGamePoints = [];
     let currentGameMode = 'tiles', matchType = 'solo';
     let totalRounds = 5, round = 0, totalScore = 0, opponentTotalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
-    let phase = 'guessing', gameHistory = [], summaryLayers = [];
-    let perfectHitsCountInGame = 0;
-
-    // PeerJS Networking Variables
+    let phase = 'guessing', gameHistory = [];
     let peer = null, peerConn = null, isHost = false;
 
     const statusEl = document.getElementById('status');
@@ -482,7 +437,17 @@
     const oppScoreEl = document.getElementById('opp-score');
     const btn = document.getElementById('btn');
 
-    // Load CSV & Populate Countries with Flag Emojis
+    // Алгоритм перемішування масиву (Fisher-Yates Shuffle)
+    function shuffle(array) {
+        let m = array.length, t, i;
+        while (m) {
+            i = Math.floor(Math.random() * m--);
+            t = array[m]; array[m] = array[i]; array[i] = t;
+        }
+        return array;
+    }
+
+    // Завантаження точок
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -496,88 +461,25 @@
                 };
             }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
-            // Populate Country Selector with full name + Flag Emoji
             const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
             const cSelect = document.getElementById('country-select');
             countries.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c;
-                const flag = getCountryFlagEmoji(c);
-                opt.textContent = `${flag} ${c}`;
+                const info = getCountryInfo(c);
+                opt.textContent = `${info.flag} ${info.name}`;
                 cSelect.appendChild(opt);
             });
 
             const startBtn = document.getElementById('start-btn');
-            startBtn.textContent = 'Start Game';
+            startBtn.textContent = 'Почати гру';
             startBtn.disabled = false;
-        })
-        .catch(() => {
-            document.getElementById('start-btn').textContent = 'Error loading points.csv';
         });
 
     function toggleMatchType() {
         matchType = document.getElementById('match-type-select').value;
         document.getElementById('mp-setup-box').style.display = matchType === 'online' ? 'block' : 'none';
         oppScoreEl.style.display = matchType === 'online' ? 'inline-block' : 'none';
-    }
-
-    // PeerJS Multiplayer Logic
-    function initHostRoom() {
-        isHost = true;
-        const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-        peer = new Peer(`WT-${code}`);
-        document.getElementById('mp-host-info').style.display = 'block';
-        document.getElementById('mp-join-info').style.display = 'none';
-        document.getElementById('room-code-display').textContent = `WT-${code}`;
-
-        peer.on('open', () => {
-            document.getElementById('mp-status-text').textContent = 'Waiting for opponent to join...';
-        });
-
-        peer.on('connection', conn => {
-            peerConn = conn;
-            setupPeerListeners();
-            document.getElementById('mp-status-text').textContent = 'Opponent Connected! Ready to Start.';
-            document.getElementById('mp-status-text').style.color = '#10b981';
-            unlockAchievement('mp_match');
-        });
-    }
-
-    function showJoinInput() {
-        isHost = false;
-        document.getElementById('mp-host-info').style.display = 'none';
-        document.getElementById('mp-join-info').style.display = 'block';
-    }
-
-    function joinRoom() {
-        const roomCode = document.getElementById('join-code-input').value.trim().toUpperCase();
-        if (!roomCode) return alert("Enter Room Code!");
-
-        peer = new Peer();
-        peer.on('open', () => {
-            peerConn = peer.connect(roomCode);
-            setupPeerListeners();
-        });
-    }
-
-    function setupPeerListeners() {
-        peerConn.on('open', () => {
-            alert('Connected to host!');
-            unlockAchievement('mp_match');
-        });
-
-        peerConn.on('data', data => {
-            if (data.type === 'START_GAME') {
-                presetGamePoints = data.points;
-                totalRounds = data.rounds;
-                currentGameMode = data.mode;
-                document.getElementById('lobby-modal').style.display = 'none';
-                startMatch();
-            } else if (data.type === 'SYNC_ROUND_SCORE') {
-                opponentTotalScore = data.totalScore;
-                oppScoreEl.textContent = `Opponent: ${opponentTotalScore} pts`;
-            }
-        });
     }
 
     function selectGameMode(mode) {
@@ -588,66 +490,95 @@
         document.getElementById('tiles-diff-group').style.display = (mode === 'tiles' || mode === 'country') ? 'block' : 'none';
         document.getElementById('cities-diff-group').style.display = mode === 'cities' ? 'block' : 'none';
         document.getElementById('country-select-group').style.display = mode === 'country' ? 'block' : 'none';
-
-        if (mode === 'country') unlockAchievement('country_expert');
     }
 
     function openLobby() {
         document.getElementById('end-modal').style.display = 'none';
         document.getElementById('lobby-modal').style.display = 'flex';
     }
-
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
-    // === Start Match ===
+    // Зум супутника та міста
+    function calculateTileDelta(point) {
+        if (currentGameMode === 'cities') {
+            // Тісний міський зум завжди!
+            return 0.007; 
+        }
+
+        const selectedC = point.country;
+        const cPoints = allPoints.filter(p => p.country === selectedC);
+        
+        let countryDimension = 5.0;
+        if (cPoints.length > 0) {
+            const lats = cPoints.map(p => p.lat);
+            const lngs = cPoints.map(p => p.lng);
+            countryDimension = Math.max(Math.min(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs)), 0.2);
+        }
+        
+        const diffKey = document.getElementById('tiles-difficulty').value;
+        let pct = diffKey === 'easy' ? 0.08 : (diffKey === 'medium' ? 0.03 : 0.012);
+        let d = countryDimension * pct;
+
+        const maxD = diffKey === 'easy' ? 0.4 : (diffKey === 'medium' ? 0.15 : 0.04);
+        const minD = diffKey === 'easy' ? 0.012 : (diffKey === 'medium' ? 0.006 : 0.003);
+        return Math.max(minD, Math.min(maxD, d));
+    }
+
+    // Збірка унікальних точок для матчу
     document.getElementById('start-btn').addEventListener('click', () => {
+        let pool = [];
+
         if (currentGameMode === 'country') {
             const selectedC = document.getElementById('country-select').value;
-            const pType = document.getElementById('country-pool-type').value;
-            let cPoints = allPoints.filter(p => p.country === selectedC);
-            if (pType === 'cities') {
-                cPoints = cPoints.filter(p => p.pop > 0);
-            }
-            activePointsPool = cPoints.length > 0 ? cPoints : allPoints.filter(p => p.country === selectedC);
+            pool = allPoints.filter(p => p.country === selectedC);
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
-            if (diff === 'easy') activePointsPool = allPoints.filter(p => p.pop >= 3000000);
-            else if (diff === 'medium') activePointsPool = allPoints.filter(p => p.pop >= 1000000 && p.pop < 3000000);
-            else if (diff === 'hard') activePointsPool = allPoints.filter(p => p.pop >= 100000 && p.pop < 1000000);
-            else if (diff === 'expert') activePointsPool = allPoints.filter(p => p.pop > 0 && p.pop < 100000);
-            if (activePointsPool.length === 0) activePointsPool = allPoints;
-        } else {
-            activePointsPool = [...allPoints];
-        }
+            let cityPool = allPoints.filter(p => p.pop > 10000); // фільтр селищ
+            if (cityPool.length === 0) cityPool = allPoints.filter(p => p.name !== '');
 
-        totalRounds = parseInt(document.getElementById('rounds-select').value);
-
-        if (matchType === 'online' && isHost && peerConn) {
-            presetGamePoints = [];
-            for (let i = 0; i < totalRounds; i++) {
-                presetGamePoints.push(activePointsPool[Math.floor(Math.random() * activePointsPool.length)]);
+            // Сортування за населенням від найбільшого до найменшого
+            cityPool.sort((a, b) => b.pop - a.pop);
+            
+            const total = cityPool.length;
+            if (diff === 'easy') {
+                pool = cityPool.slice(0, Math.max(5, Math.floor(total * 0.15))); // Топ 15%
+            } else if (diff === 'medium') {
+                pool = cityPool.slice(Math.floor(total * 0.15), Math.floor(total * 0.50)); // 15-50%
+            } else {
+                pool = cityPool.slice(Math.floor(total * 0.50)); // Інші
             }
-            peerConn.send({
-                type: 'START_GAME',
-                points: presetGamePoints,
-                rounds: totalRounds,
-                mode: currentGameMode
-            });
+        } else {
+            pool = [...allPoints];
         }
+
+        if (pool.length === 0) pool = [...allPoints];
+
+        // 100% Унікальність точок: перемішуємо pool
+        activePointsPool = shuffle([...pool]);
+        totalRounds = parseInt(document.getElementById('rounds-select').value);
 
         document.getElementById('lobby-modal').style.display = 'none';
         startMatch();
     });
 
     function startMatch() {
-        round = 0; totalScore = 0; opponentTotalScore = 0; perfectHitsCountInGame = 0; gameHistory = [];
-        summaryLayers.forEach(l => guessMap.removeLayer(l));
-        summaryLayers = [];
-
-        scoreEl.textContent = `You: 0 pts`;
-        oppScoreEl.textContent = `Opponent: 0 pts`;
-        oppScoreEl.style.display = matchType === 'online' ? 'inline-block' : 'none';
+        round = 0; totalScore = 0; gameHistory = [];
+        scoreEl.textContent = `Ви: 0 pts`;
         
+        // Авто-фокусування карти знаходження на вибрану країну
+        if (currentGameMode === 'country') {
+            const selectedC = document.getElementById('country-select').value;
+            const cPoints = allPoints.filter(p => p.country === selectedC);
+            if (cPoints.length > 0) {
+                const lats = cPoints.map(p => p.lat);
+                const lngs = cPoints.map(p => p.lng);
+                const cBounds = L.latLngBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]]);
+                guessMap.fitBounds(cBounds.pad(0.1));
+            }
+        } else {
+            guessMap.setView([20, 0], 2);
+        }
+
         setTimeout(() => {
             satMap.invalidateSize();
             guessMap.invalidateSize();
@@ -655,91 +586,32 @@
         }, 50);
     }
 
-    // === Dynamic Precise Tile Math (Country Percentile & City Mesh) ===
-    function calculateTileDelta(point) {
-        let d = 0.5;
-
-        if (currentGameMode === 'country') {
-            const selectedC = point.country || document.getElementById('country-select').value;
-            const cPoints = allPoints.filter(p => p.country === selectedC);
-            
-            if (cPoints.length > 0) {
-                const lats = cPoints.map(p => p.lat);
-                const lngs = cPoints.map(p => p.lng);
-                const latSpan = Math.max(...lats) - Math.min(...lats);
-                const lngSpan = Math.max(...lngs) - Math.min(...lngs);
-                
-                // Geographic size of country
-                const countryDimension = Math.max(Math.min(latSpan, lngSpan), 0.15);
-                
-                const diffKey = document.getElementById('tiles-difficulty').value;
-                // Strict Percentage ratios of the country's size
-                let pct = diffKey === 'easy' ? 0.10 : (diffKey === 'medium' ? 0.04 : 0.015);
-                d = countryDimension * pct;
-
-                // Absolute bounds protection so micro-countries don't get eaten whole
-                const maxD = diffKey === 'easy' ? 0.5 : (diffKey === 'medium' ? 0.2 : 0.05);
-                const minD = diffKey === 'easy' ? 0.015 : (diffKey === 'medium' ? 0.008 : 0.004);
-                d = Math.max(minD, Math.min(maxD, d));
-            }
-        } 
-        else if (currentGameMode === 'cities') {
-            // TIGHT CITY MESH ZOOM (Focus strictly on street/block grid)
-            const diffKey = document.getElementById('cities-difficulty').value;
-            
-            // Base tight frame in degrees (~1deg = 111km)
-            let baseD = 0.01; // ~1 km frame
-            if (diffKey === 'easy') baseD = 0.02;     // ~2 km district view
-            else if (diffKey === 'medium') baseD = 0.01; // ~1 km block grid
-            else if (diffKey === 'hard') baseD = 0.005; // ~500 m street mesh
-            else if (diffKey === 'expert') baseD = 0.003; // ~300 m alley mesh
-
-            // Scale slightly by city population (logarithmic)
-            const popScale = point.pop > 0 ? Math.log10(point.pop / 100000 + 1) : 1;
-            d = baseD * Math.min(1.8, Math.max(0.7, popScale * 0.8));
-        } 
-        else { // World Tiles
-            const diffKey = document.getElementById('tiles-difficulty').value;
-            d = TILES_DIFF[diffKey].d;
-        }
-
-        return d;
-    }
-
-    // === Round Setup ===
     function startRound() {
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
         guessMarker = targetRect = line = guess = null;
         phase = 'guessing';
 
-        if (presetGamePoints.length > 0 && presetGamePoints[round]) {
-            answer = presetGamePoints[round];
-        } else {
-            answer = activePointsPool[Math.floor(Math.random() * activePointsPool.length)];
-        }
+        // Беремо наступну унікальну точку
+        if (activePointsPool.length === 0) activePointsPool = shuffle([...allPoints]);
+        answer = activePointsPool.pop();
 
         const d = calculateTileDelta(answer);
-
         currentBounds = L.latLngBounds([
             [answer.lat - d, answer.lng - d],
             [answer.lat + d, answer.lng + d]
         ]);
 
-        satMap.setMinZoom(1);
-        satMap.setMaxBounds(null);
         satMap.fitBounds(currentBounds);
         updateSatelliteMask(currentBounds);
 
-        setTimeout(() => {
-            satMap.setMinZoom(satMap.getZoom());
-            satMap.setMaxBounds(currentBounds);
-        }, 50);
-
-        guessMap.setView([20, 0], 2);
+        // Блокування зуму (Leak Prevention Fix)
+        const calculatedMinZoom = satMap.getBoundsZoom(currentBounds, true);
+        satMap.setMinZoom(calculatedMinZoom);
+        satMap.setMaxBounds(currentBounds);
 
         round++;
-        statusEl.textContent = `Round ${round} of ${totalRounds}`;
-        btn.textContent = 'Check';
+        statusEl.textContent = `Раунд ${round} з ${totalRounds}`;
+        btn.textContent = 'Перевірити';
         btn.disabled = true;
     }
 
@@ -754,14 +626,10 @@
     });
 
     btn.addEventListener('click', () => {
-        if (phase === 'guessing') {
-            processGuess();
-        } else if (phase === 'revealed') {
-            if (round >= totalRounds) {
-                showEndGameModal();
-            } else {
-                startRound();
-            }
+        if (phase === 'guessing') processGuess();
+        else if (phase === 'revealed') {
+            if (round >= totalRounds) showEndGameModal();
+            else startRound();
         }
     });
 
@@ -770,26 +638,19 @@
 
         const guessLatLng = L.latLng(guess);
         const isInside = currentBounds.contains(guessLatLng);
-        
         let roundScore = 0, distKm = 0;
 
         if (isInside) {
             roundScore = 5000;
-            perfectHitsCountInGame++;
             currentUser.perfectHits = (currentUser.perfectHits || 0) + 1;
-            unlockAchievement('perfect_hit');
         } else {
             const centerLatLng = L.latLng([answer.lat, answer.lng]);
             distKm = centerLatLng.distanceTo(guessLatLng) / 1000;
-            roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 2000)));
+            roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 1500)));
         }
 
         totalScore += roundScore;
-        gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
-
-        if (peerConn) {
-            peerConn.send({ type: 'SYNC_ROUND_SCORE', totalScore: totalScore });
-        }
+        gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore });
 
         targetRect = L.rectangle(currentBounds, {
             color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.25
@@ -798,74 +659,47 @@
         const center = [answer.lat, answer.lng];
         if (!isInside) {
             line = L.polyline([guess, center], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
-            guessMap.fitBounds(L.latLngBounds([guess, ...currentBounds.toBBoxString().split(',').map(Number)]).pad(0.3));
+            // Фікс зуму: відступ pad(0.8) та обмеження maxZoom: 10
+            guessMap.fitBounds(L.latLngBounds([guess, center]).pad(0.8), { maxZoom: 10 });
         } else {
-            guessMap.fitBounds(currentBounds.pad(0.4));
+            guessMap.fitBounds(currentBounds.pad(0.5), { maxZoom: 12 });
         }
 
-        scoreEl.textContent = `You: ${totalScore.toLocaleString()} pts`;
+        scoreEl.textContent = `Ви: ${totalScore.toLocaleString()} pts`;
         
-        const flag = getCountryFlagEmoji(answer.country);
-        const resultDetail = isInside ? `Bullseye!` : `Off by ${distKm.toFixed(1)} km`;
-        const locationText = answer.name ? `${answer.name}, ${flag} ${answer.country}` : `${flag} ${answer.country}`;
+        const info = getCountryInfo(answer.country);
+        const resultDetail = isInside ? `Точне влучання!` : `${distKm.toFixed(1)} км від цілі`;
+        const locationText = answer.name ? `${answer.name}, ${info.flag} ${info.name}` : `${info.flag} ${info.name}`;
         statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
-        btn.textContent = (round >= totalRounds) ? 'Finish Game' : 'Next Round';
-        btn.disabled = false;
+        btn.textContent = (round >= totalRounds) ? 'Завершити гру' : 'Наступний раунд';
     }
 
     function showEndGameModal() {
         phase = 'finished';
         btn.disabled = true;
 
-        [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
-
         currentUser.gamesPlayed++;
-        unlockAchievement('first_game');
         if (totalScore > currentUser.highScore) currentUser.highScore = totalScore;
-
-        const earnedXP = Math.round((totalScore * 0.25) + (perfectHitsCountInGame * 250));
+        const earnedXP = Math.round(totalScore * 0.2);
         addXP(earnedXP);
 
         const breakdownList = document.getElementById('rounds-breakdown-list');
         breakdownList.innerHTML = '';
 
         gameHistory.forEach(h => {
-            const flag = getCountryFlagEmoji(h.answer.country);
-            const locationText = h.answer.name ? `${h.answer.name} (${flag} ${h.answer.country})` : `${flag} ${h.answer.country}`;
+            const info = getCountryInfo(h.answer.country);
+            const locationText = h.answer.name ? `${h.answer.name} (${info.flag} ${info.name})` : `${info.flag} ${info.name}`;
             breakdownList.innerHTML += `
                 <div class="breakdown-row">
                     <span><strong>#${h.roundNum}</strong> ${locationText}</span>
-                    <span style="color: ${h.isInside ? '#10b981' : '#38bdf8'}; font-weight:700;">+${h.roundScore} pts (${h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km'})</span>
+                    <span style="color: ${h.isInside ? '#10b981' : '#38bdf8'}; font-weight:700;">+${h.roundScore} pts (${h.isInside ? 'Влучив' : h.distKm.toFixed(0) + ' км'})</span>
                 </div>`;
         });
 
-        const maxScore = gameHistory.length * 5000;
-        const accuracy = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-
-        const winnerBanner = document.getElementById('winner-banner');
-        if (matchType === 'online') {
-            document.getElementById('end-opp-score').textContent = `${opponentTotalScore.toLocaleString()} pts`;
-            if (totalScore > opponentTotalScore) {
-                winnerBanner.textContent = "VICTORY";
-                winnerBanner.className = "winner-banner win-text";
-            } else if (totalScore < opponentTotalScore) {
-                winnerBanner.textContent = "DEFEAT";
-                winnerBanner.className = "winner-banner lose-text";
-            } else {
-                winnerBanner.textContent = "DRAW";
-                winnerBanner.className = "winner-banner draw-text";
-            }
-        } else {
-            winnerBanner.textContent = "";
-            document.getElementById('end-opp-score').textContent = "N/A";
-        }
-
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} pts`;
         document.getElementById('end-xp').textContent = `+${earnedXP} XP`;
-        document.getElementById('end-rank').textContent = accuracy >= 80 ? "Master Cartographer" : "Globe Explorer";
-
         document.getElementById('end-modal').style.display = 'flex';
     }
 
