@@ -76,11 +76,11 @@
             <p>Explore satellite imagery and guess which region is shown on the map!</p>
             
             <div class="form-group">
-                <label for="difficulty-select">Map Scale (Difficulty):</label>
+                <label for="difficulty-select">Tile Size (Difficulty):</label>
                 <select id="difficulty-select">
-                    <option value="easy">Easy (Large Region / Countries view)</option>
-                    <option value="medium" selected>Medium (Province / District view)</option>
-                    <option value="hard">Hard (City / Local Area view)</option>
+                    <option value="easy">Easy (~250 x 250 km region)</option>
+                    <option value="medium" selected>Medium (~100 x 100 km region)</option>
+                    <option value="hard">Hard (~40 x 40 km region)</option>
                 </select>
             </div>
 
@@ -132,17 +132,18 @@
     </div>
 
     <script>
+    // Розмір квадрата плитки (в градусах)
     const DIFFICULTIES = {
-        easy:   { zoom: 6 },
-        medium: { zoom: 8 },
-        hard:   { zoom: 11 }
+        easy:   { d: 1.2 },  // ~250 km
+        medium: { d: 0.5 },  // ~100 km
+        hard:   { d: 0.2 }   // ~40 km
     };
 
     // === Satellite Map ===
     const satMap = L.map('satellite', {
         zoomControl: true,
         attributionControl: false,
-        maxBoundsViscosity: 0.8
+        maxBoundsViscosity: 1.0 // Жорстка стіна: карта взагалі не може вийти за межі
     }).setView([20, 0], 2);
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -189,7 +190,7 @@
         .then(r => r.text())
         .then(text => {
             const lines = text.trim().split('\n');
-            lines.shift(); // Remove header line
+            lines.shift();
             
             points = lines.map(line => {
                 const p = line.split(',');
@@ -248,18 +249,26 @@
 
         answer = points[Math.floor(Math.random() * points.length)];
 
-        // Скидаємо попередні обмеження
+        // 1. Задаємо ТОЧНІ географічні межі супутникової плитки
+        const d = currentDifficulty.d;
+        currentBounds = L.latLngBounds([
+            [answer.lat - d, answer.lng - d],
+            [answer.lat + d, answer.lng + d]
+        ]);
+
+        // 2. Скидаємо старі межі для підгонки
         satMap.setMinZoom(1);
         satMap.setMaxBounds(null);
-        satMap.invalidateSize();
 
-        const targetZoom = currentDifficulty.zoom;
-        satMap.setView([answer.lat, answer.lng], targetZoom, { animate: false });
+        // 3. Вписуємо супутник рівно в цей квадрат
+        satMap.fitBounds(currentBounds);
 
-        // Встановлюємо комфортну зону паноромування навколо цілі
-        const initialBounds = satMap.getBounds();
-        satMap.setMinZoom(targetZoom);
-        satMap.setMaxBounds(initialBounds.pad(0.5));
+        // 4. Фіксуємо супутникову карту так, щоб гравець НЕ зміг вийти за межі цього квадрата
+        setTimeout(() => {
+            const calculatedZoom = satMap.getBoundsZoom(currentBounds);
+            satMap.setMinZoom(calculatedZoom);
+            satMap.setMaxBounds(currentBounds);
+        }, 50);
 
         guessMap.setView([20, 0], 2);
 
@@ -283,9 +292,6 @@
         if (phase === 'guessing') {
             if (!guess) return;
 
-            // Зчитуємо ФАКТИЧНІ межі супутникового кадру прямо в момент перевірки
-            currentBounds = satMap.getBounds();
-
             const guessLatLng = L.latLng(guess);
             const isInside = currentBounds.contains(guessLatLng);
             
@@ -295,9 +301,8 @@
             if (isInside) {
                 roundScore = 5000;
             } else {
-                // Відстань від точки відповіді до центру того кадру, де стояв супутник
-                const viewCenter = currentBounds.getCenter();
-                const distMeters = viewCenter.distanceTo(guessLatLng);
+                const centerLatLng = L.latLng([answer.lat, answer.lng]);
+                const distMeters = centerLatLng.distanceTo(guessLatLng);
                 distKm = distMeters / 1000;
                 roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 2000)));
             }
@@ -305,17 +310,17 @@
             totalScore += roundScore;
             gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
-            // Малюємо точний прямокутник кадру, який бачив гравець
+            // Малюємо точно ту область, яка була відкрита на супутнику
             targetRect = L.rectangle(currentBounds, {
                 color: '#ef4444',
                 weight: 2,
                 fillColor: '#ef4444',
-                fillOpacity: 0.2
+                fillOpacity: 0.25
             }).addTo(guessMap);
 
-            const viewCenter = currentBounds.getCenter();
+            const center = [answer.lat, answer.lng];
             if (!isInside) {
-                line = L.polyline([guess, viewCenter], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
+                line = L.polyline([guess, center], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
                 guessMap.fitBounds(L.latLngBounds([guess, ...currentBounds.toBBoxString().split(',').map(Number)]).pad(0.3));
             } else {
                 guessMap.fitBounds(currentBounds.pad(0.4));
@@ -349,7 +354,7 @@
         const allCoords = [];
 
         gameHistory.forEach(h => {
-            const centerCoords = h.bounds.getCenter();
+            const centerCoords = [h.answer.lat, h.answer.lng];
 
             const gIcon = L.divIcon({
                 className: '',
