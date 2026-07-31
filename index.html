@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>World Tiles - Precision City & Country Game</title>
+    <title>World Tiles - Precision Map Game</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -18,11 +18,11 @@
             padding: 0 24px; z-index: 1000;
         }
         .brand { font-size: 20px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
-        .user-profile { display: flex; align-items: center; gap: 12px; }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
         .level-badge { background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 12px; }
         .avatar-btn {
-            background: #334155; border: 1px solid #475569; color: #fff; padding: 6px 16px;
-            border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s;
+            background: #334155; border: 1px solid #475569; color: #fff; padding: 6px 14px;
+            border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s;
         }
         .avatar-btn:hover { background: #475569; }
 
@@ -36,18 +36,17 @@
             z-index: 1000; background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px 24px; border-radius: 16px; display: flex; align-items: center;
-            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 520px;
+            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 560px;
         }
-        .status-text { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        .status-text { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .timer-badge { background: #e11d48; color: #fff; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 13px; display: none; }
         .score-badge { background: #0284c7; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
-        .opp-score-badge { background: #f59e0b; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; display: none; }
 
         .btn-primary {
             padding: 10px 20px; font-size: 14px; font-weight: 600; border: none;
-            border-radius: 10px; background: #0284c7; color: #fff; cursor: pointer;
-            transition: all 0.2s;
+            border-radius: 10px; background: #0284c7; color: #fff; cursor: pointer; transition: 0.2s;
         }
-        .btn-primary:hover:not(:disabled) { background: #0369a1; transform: translateY(-1px); }
+        .btn-primary:hover:not(:disabled) { background: #0369a1; }
         .btn-primary:disabled { background: #475569; cursor: not-allowed; opacity: 0.6; }
 
         .modal-overlay {
@@ -56,16 +55,16 @@
         }
 
         .modal {
-            background: #1e293b; border: 1px solid #334155;
-            padding: 24px; border-radius: 24px; width: 90%; max-width: 580px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-height: 90vh; overflow-y: auto;
+            background: #1e293b; border: 1px solid #334155; padding: 24px; border-radius: 24px;
+            width: 90%; max-width: 580px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-height: 90vh; overflow-y: auto;
         }
-        .modal h2 { margin-top: 0; font-size: 22px; color: #fff; }
+        .modal h2 { margin-top: 0; font-size: 20px; color: #fff; }
 
         .mode-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .mode-card {
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
-            padding: 10px; cursor: pointer; text-align: center; transition: 0.2s;
+            padding: 12px 8px; cursor: pointer; text-align: center; transition: 0.2s;
         }
         .mode-card.active { border-color: #38bdf8; background: #1e293b; }
         .mode-card h3 { margin: 0 0 4px 0; font-size: 13px; color: #38bdf8; }
@@ -78,29 +77,25 @@
             border: 1px solid #334155; color: #fff; font-size: 13px; outline: none;
         }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 12px 0; }
         .stat-card { background: #0f172a; padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
         .stat-value { font-size: 18px; font-weight: 700; color: #38bdf8; }
         .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
 
-        .level-progress-bg { background: #0f172a; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #334155; overflow: hidden; margin-top: 6px; }
-        .level-progress-fill { background: linear-gradient(90deg, #0284c7, #38bdf8); height: 100%; width: 0%; transition: width 0.3s; }
+        .achievements-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 10px; margin-top: 10px; max-height: 140px; overflow-y: auto; }
+        .achievement-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 11px; }
+        .achievement-item:last-child { border-bottom: none; }
+        .ach-icon { font-size: 16px; }
+
+        .flag-img { width: 18px; height: 13px; object-fit: cover; border-radius: 2px; vertical-align: middle; margin-right: 6px; display: inline-block; }
 
         .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 160px; overflow-y: auto; }
         .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
-        .breakdown-row:last-child { border-bottom: none; }
-
-        .mp-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-top: 10px; text-align: center; }
-        .mp-code { font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 2px; margin: 6px 0; user-select: all; }
-
-        .flag-icon { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; vertical-align: middle; margin-right: 6px; display: inline-block; }
 
         @media (max-width: 768px) {
             #game { flex-direction: column; }
             .divider { width: 100%; height: 4px; }
             #hud { min-width: unset; width: calc(100% - 24px); bottom: 12px; padding: 8px 12px; }
-            .status-text { font-size: 11px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .modal { width: 95%; padding: 16px; }
             .mode-selector, .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -119,8 +114,8 @@
     <div id="game">
         <div id="hud">
             <span id="status" class="status-text">Round 1</span>
+            <span id="timer-display" class="timer-badge">30s</span>
             <span id="score" class="score-badge">You: 0 pts</span>
-            <span id="opp-score" class="opp-score-badge">Opponent: 0 pts</span>
             <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Check</button>
         </div>
 
@@ -136,43 +131,19 @@
                 <h2 style="margin:0;">Lobby Settings</h2>
                 <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
             </div>
-            
-            <div class="form-group">
-                <label>Match Type:</label>
-                <select id="match-type-select" onchange="toggleMatchType()">
-                    <option value="solo" selected>Singleplayer</option>
-                    <option value="online">Multiplayer Duel (PeerJS)</option>
-                </select>
-            </div>
 
-            <div id="mp-setup-box" class="mp-box" style="display: none;">
-                <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;">
-                    <button class="btn-primary" onclick="initHostRoom()" style="padding: 6px 12px; font-size: 12px;">Create Room</button>
-                    <button class="btn-primary" onclick="showJoinInput()" style="padding: 6px 12px; font-size: 12px; background: #334155;">Join Room</button>
-                </div>
-                <div id="mp-host-info" style="display: none;">
-                    <span style="font-size: 11px; color: #94a3b8;">Room Code:</span>
-                    <div id="room-code-display" class="mp-code">GENERATING...</div>
-                    <span id="mp-status-text" style="font-size: 11px; color: #f59e0b;">Waiting for opponent...</span>
-                </div>
-                <div id="mp-join-info" style="display: none;">
-                    <input type="text" id="join-code-input" placeholder="Enter Room Code..." style="text-align: center; font-weight: 700; text-transform: uppercase;">
-                    <button class="btn-primary" onclick="joinRoom()" style="width: 100%; margin-top: 6px; padding: 8px;">Connect</button>
-                </div>
-            </div>
-
-            <div class="mode-selector" style="margin-top: 12px;">
+            <div class="mode-selector">
                 <div class="mode-card active" data-mode="tiles" onclick="selectGameMode('tiles')">
                     <h3>World Tiles</h3>
-                    <p>Random global tiles</p>
+                    <p>Global tile frames</p>
                 </div>
                 <div class="mode-card" data-mode="cities" onclick="selectGameMode('cities')">
                     <h3>Guess City</h3>
-                    <p>Tight city grid frame</p>
+                    <p>Tight city streets</p>
                 </div>
                 <div class="mode-card" data-mode="country" onclick="selectGameMode('country')">
                     <h3>Country Mode</h3>
-                    <p>Focus on a single country</p>
+                    <p>Single country tiles</p>
                 </div>
             </div>
 
@@ -182,20 +153,30 @@
             </div>
 
             <div id="tiles-diff-group" class="form-group">
-                <label>Tile Zoom Scale (Difficulty):</label>
+                <label>Tile Zoom Level (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy">Easy (% Country proportional tile)</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard (Small detail view)</option>
+                    <option value="easy">Easy (Large Region view)</option>
+                    <option value="medium" selected>Medium (City Area view)</option>
+                    <option value="hard">Hard (Detailed Street view)</option>
                 </select>
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
-                <label>City Category (% Relative population):</label>
+                <label>City Category:</label>
                 <select id="cities-difficulty">
-                    <option value="easy">Easy (Top 15% largest cities)</option>
+                    <option value="easy">Easy (Top 15% Megacities)</option>
                     <option value="medium" selected>Medium (Mid-sized cities)</option>
-                    <option value="hard">Hard (Smaller towns)</option>
+                    <option value="hard">Hard (Smaller Towns)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Round Timer:</label>
+                <select id="timer-select">
+                    <option value="0" selected>Unlimited Time</option>
+                    <option value="15">15 Seconds</option>
+                    <option value="30">30 Seconds</option>
+                    <option value="60">60 Seconds</option>
                 </select>
             </div>
 
@@ -216,20 +197,7 @@
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
             <h2>User Profile</h2>
-            <div style="background: #0f172a; padding: 10px 14px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: #94a3b8;">ID: <strong id="user-id-display" style="color: #38bdf8;">#GEO-0000</strong></span>
-                    <span id="user-level-display" style="font-weight: 700; color: #38bdf8; font-size: 13px;">Level 1</span>
-                </div>
-                <div class="level-progress-bg">
-                    <div id="xp-progress-fill" class="level-progress-fill"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 4px;">
-                    <span id="xp-text">0 / 1000 XP</span>
-                    <span>Total XP: <span id="total-xp-text">0</span></span>
-                </div>
-            </div>
-
+            
             <div class="form-group">
                 <label>Username:</label>
                 <input type="text" id="username-input" placeholder="Enter name...">
@@ -250,7 +218,10 @@
                 </div>
             </div>
 
-            <button class="btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 10px;">Save Profile</button>
+            <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 10px;">Achievements:</label>
+            <div id="achievements-list" class="achievements-box"></div>
+
+            <button class="btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 12px;">Save Profile</button>
             <button class="btn-primary" onclick="closeProfile()" style="width: 100%; margin-top: 6px; background: #475569;">Close</button>
         </div>
     </div>
@@ -258,21 +229,20 @@
     <!-- End Game Modal -->
     <div id="end-modal" class="modal-overlay" style="display: none;">
         <div class="modal" style="text-align: center;">
-            <div id="winner-banner" class="winner-banner"></div>
-            <h1 style="margin-top:0;">Game Completed!</h1>
+            <h1 style="margin-top:0;">Match Completed!</h1>
             
             <div class="stats-grid">
                 <div class="stat-card">
                     <div id="end-score" class="stat-value">0</div>
-                    <div class="stat-label">Your Score</div>
+                    <div class="stat-label">Final Score</div>
                 </div>
                 <div class="stat-card">
                     <div id="end-xp" class="stat-value">+0 XP</div>
-                    <div class="stat-label">XP Earned</div>
+                    <div class="stat-label">XP Gained</div>
                 </div>
                 <div class="stat-card">
-                    <div id="end-opp-score" class="stat-value">N/A</div>
-                    <div class="stat-label">Opponent Score</div>
+                    <div id="end-bullseyes" class="stat-value">0</div>
+                    <div class="stat-label">Bullseyes</div>
                 </div>
             </div>
 
@@ -283,8 +253,7 @@
     </div>
 
     <script>
-    // ISO Country Mapping for crisp rendering across all Operating Systems
-    const COUNTRY_ISO_MAP = {
+    const COUNTRY_ISO = {
         "Ukraine": "ua", "Portugal": "pt", "United States": "us", "USA": "us",
         "Germany": "de", "France": "fr", "Spain": "es", "Italy": "it",
         "United Kingdom": "gb", "UK": "gb", "Canada": "ca", "Poland": "pl",
@@ -293,59 +262,78 @@
         "Netherlands": "nl", "Belgium": "be", "Switzerland": "ch", "Austria": "at",
         "Sweden": "se", "Norway": "no", "Finland": "fi", "Denmark": "dk",
         "Greece": "gr", "Czech Republic": "cz", "Slovakia": "sk", "Hungary": "hu",
-        "Romania": "ro", "Bulgaria": "bg", "Croatia": "hr", "Ireland": "ie",
-        "Lithuania": "lt", "Latvia": "lv", "Estonia": "ee", "Iceland": "is"
+        "Romania": "ro", "Bulgaria": "bg", "Croatia": "hr", "Ireland": "ie"
     };
 
-    function getCountryInfo(name) {
-        if (!name) return { fullName: "Unknown Country", flagHtml: "🌐" };
-        const code = COUNTRY_ISO_MAP[name];
-        if (!code) {
-            return { fullName: name, flagHtml: `🌐` };
-        }
-        const imgHtml = `<img src="https://flagcdn.com/20x15/${code}.png" class="flag-icon" alt="${name}">`;
-        return { fullName: name, flagHtml: imgHtml };
+    function getCountryHTML(name) {
+        if (!name) return "Unknown Country";
+        const code = COUNTRY_ISO[name];
+        if (!code) return name;
+        return `<img src="https://flagcdn.com/20x15/${code}.png" class="flag-img" alt="${name}"> ${name}`;
     }
 
-    let currentUser = JSON.parse(localStorage.getItem('geo_user_v5')) || {
-        id: '#GEO-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
-        name: 'Player' + Math.floor(1000 + Math.random() * 9000),
-        gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, level: 1
-    };
+    // Auto-restore progress across older storage keys if present
+    function loadSavedUser() {
+        const keys = ['geo_user_v5', 'geo_user_v4', 'geo_user_v3', 'geo_user'];
+        for (let key of keys) {
+            const data = localStorage.getItem(key);
+            if (data) {
+                try { return JSON.parse(data); } catch(e){}
+            }
+        }
+        return {
+            name: 'Player' + Math.floor(1000 + Math.random() * 9000),
+            gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, achievements: []
+        };
+    }
 
-    function calculateLevel(xp) { return Math.floor(xp / 1000) + 1; }
+    let currentUser = loadSavedUser();
 
-    function addXP(amount) {
-        currentUser.xp += Math.round(amount);
-        currentUser.level = calculateLevel(currentUser.xp);
+    function saveUserData() {
         localStorage.setItem('geo_user_v5', JSON.stringify(currentUser));
         updateProfileUI();
+    }
+
+    const ACHIEVEMENTS_DEF = [
+        { id: 'first_game', icon: '🎮', title: 'Rookie Traveler', desc: 'Play your first game' },
+        { id: 'bullseye', icon: '🎯', title: 'Sharpshooter', desc: 'Get a 5,000 pts perfect hit' },
+        { id: 'high_score', icon: '🏆', title: 'Map Master', desc: 'Score over 20,000 points in one match' }
+    ];
+
+    function checkAchievements() {
+        if (!currentUser.achievements) currentUser.achievements = [];
+        if (currentUser.gamesPlayed >= 1 && !currentUser.achievements.includes('first_game')) currentUser.achievements.push('first_game');
+        if (currentUser.perfectHits >= 1 && !currentUser.achievements.includes('bullseye')) currentUser.achievements.push('bullseye');
+        if (currentUser.highScore >= 20000 && !currentUser.achievements.includes('high_score')) currentUser.achievements.push('high_score');
+        saveUserData();
     }
 
     function updateProfileUI() {
         document.getElementById('username-display').textContent = currentUser.name;
         document.getElementById('username-input').value = currentUser.name;
-        document.getElementById('user-id-display').textContent = currentUser.id;
         document.getElementById('user-games').textContent = currentUser.gamesPlayed;
         document.getElementById('user-highscore').textContent = currentUser.highScore;
         document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
 
-        const currentLvl = calculateLevel(currentUser.xp);
-        const progressInLevel = currentUser.xp % 1000;
-        const pct = (progressInLevel / 1000) * 100;
-
-        document.getElementById('level-badge-top').textContent = `Lvl ${currentLvl}`;
-        document.getElementById('user-level-display').textContent = `Level ${currentLvl}`;
-        document.getElementById('xp-progress-fill').style.width = `${pct}%`;
-        document.getElementById('xp-text').textContent = `${progressInLevel} / 1000 XP`;
-        document.getElementById('total-xp-text').textContent = currentUser.xp;
+        const achList = document.getElementById('achievements-list');
+        achList.innerHTML = '';
+        ACHIEVEMENTS_DEF.forEach(ach => {
+            const unlocked = currentUser.achievements && currentUser.achievements.includes(ach.id);
+            achList.innerHTML += `
+                <div class="achievement-item" style="opacity: ${unlocked ? '1' : '0.4'}">
+                    <span class="ach-icon">${ach.icon}</span>
+                    <div>
+                        <strong style="color: ${unlocked ? '#38bdf8' : '#94a3b8'}">${ach.title}</strong>
+                        <div style="font-size:10px; color:#64748b;">${ach.desc} ${unlocked ? '✓' : ''}</div>
+                    </div>
+                </div>`;
+        });
     }
 
     function saveProfile() {
-        const inputName = document.getElementById('username-input').value.trim();
-        if (inputName) currentUser.name = inputName;
-        localStorage.setItem('geo_user_v5', JSON.stringify(currentUser));
-        updateProfileUI();
+        const val = document.getElementById('username-input').value.trim();
+        if (val) currentUser.name = val;
+        saveUserData();
         closeProfile();
     }
 
@@ -354,8 +342,18 @@
     function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
 
     // === Maps Initialization ===
-    const satMap = L.map('satellite', { zoomControl: true, attributionControl: false }).setView([20, 0], 2);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 17 }).addTo(satMap);
+    const satMap = L.map('satellite', { 
+        zoomControl: false, 
+        attributionControl: false,
+        dragging: false,
+        touchZoom: false,
+        doubleClickZoom: false,
+        scrollWheelZoom: false,
+        boxZoom: false,
+        keyboard: false
+    }).setView([20, 0], 2);
+    
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
 
     const guessMap = L.map('guessmap', { maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 0.8 }).setView([20, 0], 2);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19, noWrap: true }).addTo(guessMap);
@@ -366,34 +364,18 @@
         iconSize: [16, 16], iconAnchor: [8, 8]
     });
 
-    let satMaskLayer = null;
-
-    function updateSatelliteMask(bounds) {
-        if (satMaskLayer) satMap.removeLayer(satMaskLayer);
-        const giantWorld = [[180, -360], [180, 360], [-180, 360], [-180, -360]];
-        const innerHole = [
-            [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
-            [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
-            [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
-            [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
-        ];
-        satMaskLayer = L.polygon([giantWorld, innerHole], {
-            color: '#000', fillColor: '#0f172a', fillOpacity: 0.9, stroke: false
-        }).addTo(satMap);
-    }
-
-    let allPoints = [], activePointsPool = [];
-    let currentGameMode = 'tiles', matchType = 'solo';
+    let allPoints = [], activePool = [];
+    let currentGameMode = 'tiles';
     let totalRounds = 5, round = 0, totalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
-    let phase = 'guessing', gameHistory = [];
+    let phase = 'guessing', gameHistory = [], timerInterval = null, timerLeft = 0;
 
     const statusEl = document.getElementById('status');
     const scoreEl = document.getElementById('score');
     const btn = document.getElementById('btn');
+    const timerDisplay = document.getElementById('timer-display');
 
-    // Fisher-Yates Shuffle algorithm for unique location pool
     function shuffle(array) {
         let m = array.length, t, i;
         while (m) {
@@ -403,7 +385,6 @@
         return array;
     }
 
-    // Load CSV Points
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -422,8 +403,7 @@
             countries.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c;
-                const info = getCountryInfo(c);
-                opt.textContent = `${c}`;
+                opt.textContent = c;
                 cSelect.appendChild(opt);
             });
 
@@ -431,11 +411,6 @@
             startBtn.textContent = 'Start Game';
             startBtn.disabled = false;
         });
-
-    function toggleMatchType() {
-        matchType = document.getElementById('match-type-select').value;
-        document.getElementById('mp-setup-box').style.display = matchType === 'online' ? 'block' : 'none';
-    }
 
     function selectGameMode(mode) {
         currentGameMode = mode;
@@ -453,28 +428,13 @@
     }
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
-    function calculateTileDelta(point) {
-        if (currentGameMode === 'cities') {
-            return 0.007; // Always tight city street grid
-        }
-
-        const selectedC = point.country;
-        const cPoints = allPoints.filter(p => p.country === selectedC);
-        
-        let countryDimension = 5.0;
-        if (cPoints.length > 0) {
-            const lats = cPoints.map(p => p.lat);
-            const lngs = cPoints.map(p => p.lng);
-            countryDimension = Math.max(Math.min(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs)), 0.2);
-        }
-        
-        const diffKey = document.getElementById('tiles-difficulty').value;
-        let pct = diffKey === 'easy' ? 0.08 : (diffKey === 'medium' ? 0.03 : 0.012);
-        let d = countryDimension * pct;
-
-        const maxD = diffKey === 'easy' ? 0.4 : (diffKey === 'medium' ? 0.15 : 0.04);
-        const minD = diffKey === 'easy' ? 0.012 : (diffKey === 'medium' ? 0.006 : 0.003);
-        return Math.max(minD, Math.min(maxD, d));
+    // FIXED: Classic fixed-tile sizes returned! No country dimension scaling!
+    function getTileDelta() {
+        if (currentGameMode === 'cities') return 0.006;
+        const diff = document.getElementById('tiles-difficulty').value;
+        if (diff === 'easy') return 0.12;       // ~12km box
+        if (diff === 'medium') return 0.035;    // ~3.5km box
+        return 0.008;                           // ~800m tight box
     }
 
     document.getElementById('start-btn').addEventListener('click', () => {
@@ -489,22 +449,16 @@
             if (cityPool.length === 0) cityPool = allPoints.filter(p => p.name !== '');
 
             cityPool.sort((a, b) => b.pop - a.pop);
-            
             const total = cityPool.length;
-            if (diff === 'easy') {
-                pool = cityPool.slice(0, Math.max(5, Math.floor(total * 0.15)));
-            } else if (diff === 'medium') {
-                pool = cityPool.slice(Math.floor(total * 0.15), Math.floor(total * 0.50));
-            } else {
-                pool = cityPool.slice(Math.floor(total * 0.50));
-            }
+            if (diff === 'easy') pool = cityPool.slice(0, Math.floor(total * 0.15));
+            else if (diff === 'medium') pool = cityPool.slice(Math.floor(total * 0.15), Math.floor(total * 0.50));
+            else pool = cityPool.slice(Math.floor(total * 0.50));
         } else {
             pool = [...allPoints];
         }
 
         if (pool.length === 0) pool = [...allPoints];
-
-        activePointsPool = shuffle([...pool]);
+        activePool = shuffle([...pool]);
         totalRounds = parseInt(document.getElementById('rounds-select').value);
 
         document.getElementById('lobby-modal').style.display = 'none';
@@ -521,8 +475,7 @@
             if (cPoints.length > 0) {
                 const lats = cPoints.map(p => p.lat);
                 const lngs = cPoints.map(p => p.lng);
-                const cBounds = L.latLngBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]]);
-                guessMap.fitBounds(cBounds.pad(0.1));
+                guessMap.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]]);
             }
         } else {
             guessMap.setView([20, 0], 2);
@@ -536,30 +489,50 @@
     }
 
     function startRound() {
+        if (timerInterval) clearInterval(timerInterval);
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
         guessMarker = targetRect = line = guess = null;
         phase = 'guessing';
 
-        if (activePointsPool.length === 0) activePointsPool = shuffle([...allPoints]);
-        answer = activePointsPool.pop();
+        if (activePool.length === 0) activePool = shuffle([...allPoints]);
+        answer = activePool.pop();
 
-        const d = calculateTileDelta(answer);
+        const d = getTileDelta();
         currentBounds = L.latLngBounds([
             [answer.lat - d, answer.lng - d],
             [answer.lat + d, answer.lng + d]
         ]);
 
+        // STRICT SAT MAP BOUNDS LOCK (Zero Leak!)
         satMap.fitBounds(currentBounds);
-        updateSatelliteMask(currentBounds);
-
-        const calculatedMinZoom = satMap.getBoundsZoom(currentBounds, true);
-        satMap.setMinZoom(calculatedMinZoom);
+        const lockZoom = satMap.getBoundsZoom(currentBounds, true);
+        satMap.setMinZoom(lockZoom);
+        satMap.setMaxZoom(lockZoom);
         satMap.setMaxBounds(currentBounds);
+        satMap.options.maxBoundsViscosity = 1.0;
 
         round++;
         statusEl.textContent = `Round ${round} of ${totalRounds}`;
         btn.textContent = 'Check';
         btn.disabled = true;
+
+        const timerSecs = parseInt(document.getElementById('timer-select').value);
+        if (timerSecs > 0) {
+            timerLeft = timerSecs;
+            timerDisplay.textContent = `${timerLeft}s`;
+            timerDisplay.style.display = 'inline-block';
+            timerInterval = setInterval(() => {
+                timerLeft--;
+                timerDisplay.textContent = `${timerLeft}s`;
+                if (timerLeft <= 0) {
+                    clearInterval(timerInterval);
+                    if (!guess) guess = [0, 0]; // Default guess on timeout
+                    processGuess();
+                }
+            }, 1000);
+        } else {
+            timerDisplay.style.display = 'none';
+        }
     }
 
     guessMap.on('click', e => {
@@ -581,6 +554,7 @@
     });
 
     function processGuess() {
+        if (timerInterval) clearInterval(timerInterval);
         if (!guess) return;
 
         const guessLatLng = L.latLng(guess);
@@ -600,43 +574,48 @@
         gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore });
 
         targetRect = L.rectangle(currentBounds, {
-            color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.25
+            color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.3
         }).addTo(guessMap);
 
         const center = [answer.lat, answer.lng];
         if (!isInside) {
-            line = L.polyline([guess, center], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
-            guessMap.fitBounds(L.latLngBounds([guess, center]).pad(0.8), { maxZoom: 10 });
+            line = L.polyline([guess, center], { color: '#38bdf8', weight: 2, dashArray: '5,5' }).addTo(guessMap);
+            guessMap.fitBounds(L.latLngBounds([guess, center]).pad(0.6), { maxZoom: 10 });
         } else {
             guessMap.fitBounds(currentBounds.pad(0.5), { maxZoom: 12 });
         }
 
         scoreEl.textContent = `You: ${totalScore.toLocaleString()} pts`;
         
-        const info = getCountryInfo(answer.country);
+        const countryHtml = getCountryHTML(answer.country);
         const resultDetail = isInside ? `Bullseye!` : `${distKm.toFixed(1)} km away`;
-        const locationText = answer.name ? `${answer.name}, ${info.flagHtml} ${info.fullName}` : `${info.flagHtml} ${info.fullName}`;
+        const locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
         statusEl.innerHTML = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
         btn.textContent = (round >= totalRounds) ? 'Finish Game' : 'Next Round';
+        btn.disabled = false;
     }
 
     function showEndGameModal() {
         phase = 'finished';
         btn.disabled = true;
 
-        currentUser.gamesPlayed++;
-        if (totalScore > currentUser.highScore) currentUser.highScore = totalScore;
+        currentUser.gamesPlayed = (currentUser.gamesPlayed || 0) + 1;
+        if (totalScore > (currentUser.highScore || 0)) currentUser.highScore = totalScore;
         const earnedXP = Math.round(totalScore * 0.2);
-        addXP(earnedXP);
+        currentUser.xp = (currentUser.xp || 0) + earnedXP;
+
+        checkAchievements();
 
         const breakdownList = document.getElementById('rounds-breakdown-list');
         breakdownList.innerHTML = '';
 
+        let bullseyesCount = 0;
         gameHistory.forEach(h => {
-            const info = getCountryInfo(h.answer.country);
-            const locationText = h.answer.name ? `${h.answer.name} (${info.flagHtml} ${info.fullName})` : `${info.flagHtml} ${info.fullName}`;
+            if (h.isInside) bullseyesCount++;
+            const countryHtml = getCountryHTML(h.answer.country);
+            const locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
             breakdownList.innerHTML += `
                 <div class="breakdown-row">
                     <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
@@ -646,6 +625,7 @@
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} pts`;
         document.getElementById('end-xp').textContent = `+${earnedXP} XP`;
+        document.getElementById('end-bullseyes').textContent = bullseyesCount;
         document.getElementById('end-modal').style.display = 'flex';
     }
 
