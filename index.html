@@ -248,21 +248,18 @@
 
         answer = points[Math.floor(Math.random() * points.length)];
 
-        // 1. Повністю скидаємо попередні обмеження перед розрахунком
+        // Скидаємо попередні обмеження
         satMap.setMinZoom(1);
         satMap.setMaxBounds(null);
         satMap.invalidateSize();
 
-        // 2. Встановлюємо позицію супутника за зумом
         const targetZoom = currentDifficulty.zoom;
         satMap.setView([answer.lat, answer.lng], targetZoom, { animate: false });
 
-        // 3. Зчитуємо ФАКТИЧНІ межі екрана супутника
-        currentBounds = satMap.getBounds();
-
-        // 4. Фіксуємо мінімальний зум та межі для поточного раунду
+        // Встановлюємо комфортну зону паноромування навколо цілі
+        const initialBounds = satMap.getBounds();
         satMap.setMinZoom(targetZoom);
-        satMap.setMaxBounds(currentBounds.pad(0.8));
+        satMap.setMaxBounds(initialBounds.pad(0.5));
 
         guessMap.setView([20, 0], 2);
 
@@ -286,6 +283,9 @@
         if (phase === 'guessing') {
             if (!guess) return;
 
+            // Зчитуємо ФАКТИЧНІ межі супутникового кадру прямо в момент перевірки
+            currentBounds = satMap.getBounds();
+
             const guessLatLng = L.latLng(guess);
             const isInside = currentBounds.contains(guessLatLng);
             
@@ -295,8 +295,9 @@
             if (isInside) {
                 roundScore = 5000;
             } else {
-                const centerLatLng = L.latLng([answer.lat, answer.lng]);
-                const distMeters = centerLatLng.distanceTo(guessLatLng);
+                // Відстань від точки відповіді до центру того кадру, де стояв супутник
+                const viewCenter = currentBounds.getCenter();
+                const distMeters = viewCenter.distanceTo(guessLatLng);
                 distKm = distMeters / 1000;
                 roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 2000)));
             }
@@ -304,7 +305,7 @@
             totalScore += roundScore;
             gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
-            // Відображаємо точний прямокутник видимої території
+            // Малюємо точний прямокутник кадру, який бачив гравець
             targetRect = L.rectangle(currentBounds, {
                 color: '#ef4444',
                 weight: 2,
@@ -312,9 +313,9 @@
                 fillOpacity: 0.2
             }).addTo(guessMap);
 
-            const center = [answer.lat, answer.lng];
+            const viewCenter = currentBounds.getCenter();
             if (!isInside) {
-                line = L.polyline([guess, center], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
+                line = L.polyline([guess, viewCenter], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
                 guessMap.fitBounds(L.latLngBounds([guess, ...currentBounds.toBBoxString().split(',').map(Number)]).pad(0.3));
             } else {
                 guessMap.fitBounds(currentBounds.pad(0.4));
@@ -348,7 +349,7 @@
         const allCoords = [];
 
         gameHistory.forEach(h => {
-            const centerCoords = [h.answer.lat, h.answer.lng];
+            const centerCoords = h.bounds.getCenter();
 
             const gIcon = L.divIcon({
                 className: '',
@@ -376,10 +377,10 @@
         const maxPossibleScore = totalRounds * 5000;
         const accuracy = Math.round((totalScore / maxPossibleScore) * 100);
 
-        let rank = "";
-        if (accuracy >= 85) rank = "";
-        else if (accuracy >= 65) rank = "";
-        else if (accuracy >= 40) rank = "";
+        let rank = "Tourist Explorer";
+        if (accuracy >= 85) rank = "Master Cartographer 🌍";
+        else if (accuracy >= 65) rank = "Globe Trotter ✈️";
+        else if (accuracy >= 40) rank = "Regional Guide 🗺️";
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} / ${maxPossibleScore.toLocaleString()}`;
         document.getElementById('end-accuracy').textContent = `${accuracy}%`;
