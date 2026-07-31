@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Tiles</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+        #game { display: flex; height: 100vh; }
+        .panel { flex: 1; position: relative; }
+        #satellite, #guessmap { position: absolute; inset: 0; }
+        .divider { width: 3px; background: #d0d0d0; }
+        #hud {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(255,255,255,.96); border-top: 1px solid #ddd;
+            padding: 10px 16px; display: flex; align-items: center; gap: 16px;
+            font: 14px system-ui, sans-serif;
+        }
+        #btn {
+            margin-left: auto; padding: 8px 18px; font-size: 14px;
+            border: none; border-radius: 8px; background: #2c7fb8; color: #fff; cursor: pointer;
+        }
+        #btn:disabled { background: #9db; cursor: default; }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div class="panel"><div id="satellite"></div></div>
+        <div class="divider"></div>
+        <div class="panel"><div id="guessmap"></div></div>
+    </div>
+    <div id="hud">
+        <span id="status">Loading…</span>
+        <button id="btn" disabled>Check</button>
+        <span id="score">Score: 0</span>
+    </div>
+
+    <script>
+        // === left map ===
+        const satMap = L.map('satellite', {
+            zoomControl: true, attributionControl: false,
+            minZoom: 8, maxZoom: 18           //
+        }).setView([0, 0], 10);
+        L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            { maxZoom: 19 }
+        ).addTo(satMap);
+
+        // === right map ===
+        const guessMap = L.map('guessmap', { worldCopyJump: true }).setView([20, 0], 2);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap', maxZoom: 19
+        }).addTo(guessMap);
+
+        // === points ===
+        let points = [];
+        let answer = null;
+
+        fetch('points.csv')
+            .then(r => r.text())
+            .then(text => {
+                const lines = text.trim().split('\n');
+                lines.shift();                         // прибрати заголовок
+                points = lines.map(line => {
+                    const p = line.split(',');
+                    return {
+                        lng: parseFloat(p[0]),
+                        lat: parseFloat(p[1]),
+                        name: p[2],
+                        country: p[3],
+                        pop: parseInt(p[4])
+                    };
+                }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
+
+                document.getElementById('status').textContent =
+                    ` ${points.length} . Next round`;
+                document.getElementById('btn').textContent = 'Next round';
+                document.getElementById('btn').disabled = false;
+                console.log('points', points.length);
+            })
+            .catch(() => document.getElementById('status').textContent = 'points.csv not found');
+
+        // === random location ===
+        function newLocation() {
+            answer = points[Math.floor(Math.random() * points.length)];
+            satMap.setView([answer.lat, answer.lng], 11);   // зум знімка (легкий рівень)
+            document.getElementById('status').textContent =
+            console.log(answer.name, answer.country, answer.lat, answer.lng);
+        }
+
+        document.getElementById('btn').addEventListener('click', newLocation);
+    </script>
+</body>
+</html>
