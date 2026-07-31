@@ -69,7 +69,7 @@
 </head>
 <body>
 
-    <!-- Start -->
+    <!-- Start Modal -->
     <div id="start-modal" class="modal-overlay">
         <div class="modal">
             <h1>World Tiles</h1>
@@ -78,9 +78,9 @@
             <div class="form-group">
                 <label for="difficulty-select">Map View Scale:</label>
                 <select id="difficulty-select">
-                    <option value="easy">Easy (~250 x 250 km region)</option>
-                    <option value="medium" selected>Medium (~100 x 100 km region)</option>
-                    <option value="hard">Hard (~50 x 50 km region)</option>
+                    <option value="easy">Easy (Large Region / Countries)</option>
+                    <option value="medium" selected>Medium (Province / District)</option>
+                    <option value="hard">Hard (Local Area / City scale)</option>
                 </select>
             </div>
 
@@ -131,18 +131,19 @@
         <div class="panel"><div id="guessmap"></div></div>
     </div>
 
- <script>
+    <script>
+    // Zoom levels determine scale. Bounds will auto-adapt to viewport size!
     const DIFFICULTIES = {
-        easy:   { d: 1.2,  zoom: 7 },  // ~250 km span box
-        medium: { d: 0.45, zoom: 9 },  // ~100 km span box
-        hard:   { d: 0.22, zoom: 11 }  // ~50 km span box
+        easy:   { zoom: 6 },
+        medium: { zoom: 8 },
+        hard:   { zoom: 11 }
     };
 
-    // === Satellite ===
+    // === Satellite Map ===
     const satMap = L.map('satellite', {
         zoomControl: true,
         attributionControl: false,
-        maxBoundsViscosity: 0.8 // М'якша межа при досягненні краю
+        maxBoundsViscosity: 0.8
     }).setView([20, 0], 2);
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -150,6 +151,7 @@
         maxNativeZoom: 17
     }).addTo(satMap);
 
+    // === Guess Map ===
     const guessMap = L.map('guessmap', { 
         maxBounds: [[-90, -180], [90, 180]],
         maxBoundsViscosity: 0.8
@@ -161,14 +163,13 @@
         noWrap: true
     }).addTo(guessMap);
 
-    // Custom Map Markers
     const guessIcon = L.divIcon({ 
         className: '',
         html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);"></div>', 
         iconSize: [16, 16], iconAnchor: [8, 8] 
     });
 
-    // Variables
+    // Game Variables
     let points = [];
     let totalRounds = 5;
     let currentDifficulty = DIFFICULTIES.medium;
@@ -184,7 +185,7 @@
     const scoreEl = document.getElementById('score');
     const btn = document.getElementById('btn');
 
-    // === CSV ===
+    // === CSV Loading ===
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -235,7 +236,7 @@
         document.getElementById('start-modal').style.display = 'flex';
     });
 
-    // === Round ===
+    // === Round Control ===
     function startRound() {
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
         guessMarker = targetRect = line = guess = null;
@@ -243,20 +244,17 @@
 
         answer = points[Math.floor(Math.random() * points.length)];
 
-        const d = currentDifficulty.d;
-        currentBounds = L.latLngBounds([
-            [answer.lat - d, answer.lng - d],
-            [answer.lat + d, answer.lng + d]
-        ]);
-
-        // Обмежуємо мінімальний зум (щоб не відзумлювали занадто далеко)
-        satMap.setMinZoom(currentDifficulty.zoom);
-
-        // ВИПРАВЛЕННЯ: Додаємо відступ pad(1.0), щоб можна було вільно підсунути будь-яку точку в центр
-        satMap.setMaxBounds(currentBounds.pad(1.0));
-
+        // 1. Встановити супутникову карту за координатами та зумом
         satMap.setView([answer.lat, answer.lng], currentDifficulty.zoom);
 
+        // 2. Отримати ТОЧНІ видимі межі екрана супутника
+        currentBounds = satMap.getBounds();
+
+        // 3. Зафіксувати обмеження для переміщення
+        satMap.setMinZoom(currentDifficulty.zoom);
+        satMap.setMaxBounds(currentBounds.pad(1.0));
+
+        // Скинути вигляд правої карти
         guessMap.setView([20, 0], 2);
 
         round++;
@@ -297,6 +295,7 @@
             totalScore += roundScore;
             gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
+            // Відображаємо прямокутник території
             targetRect = L.rectangle(currentBounds, {
                 color: '#ef4444',
                 weight: 2,
@@ -381,6 +380,6 @@
         endModal.classList.add('end-overlay');
         endModal.style.display = 'flex';
     }
-</script>
+    </script>
 </body>
 </html>
