@@ -15,19 +15,6 @@
         #satellite, #guessmap { position: absolute; inset: 0; }
         .divider { width: 4px; background: #374151; z-index: 400; }
 
-        /* Crosshair target in the center of satellite view */
-        #satellite::after {
-            content: '+';
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 32px;
-            font-weight: 300;
-            pointer-events: none;
-            z-index: 500;
-        }
-
         /* HUD Bar */
         #hud {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -82,11 +69,11 @@
 </head>
 <body>
 
-    <!-- Start Modal -->
+    <!-- Start -->
     <div id="start-modal" class="modal-overlay">
         <div class="modal">
             <h1>World Tiles</h1>
-            <p></p>
+            <p>Explore satellite imagery and guess which region is shown on the map!</p>
             
             <div class="form-group">
                 <label for="difficulty-select">Map View Scale:</label>
@@ -145,26 +132,26 @@
     </div>
 
     <script>
-    // === Scale / Bounds Configuration ===
+
     const DIFFICULTIES = {
-        easy:   { d: 1.2,  zoom: 7 },  // ~260 km span box
+        easy:   { d: 1.2,  zoom: 7 },  // ~250 km span box
         medium: { d: 0.45, zoom: 9 },  // ~100 km span box
-        hard:   { d: 0.22, zoom: 10 }  // ~50 km span box
+        hard:   { d: 0.22, zoom: 11 }  // ~50 km span box (closer zoom)
     };
 
-    // === Satellite Map Initialization ===
+    // === Satellite ===
     const satMap = L.map('satellite', {
         zoomControl: true,
         attributionControl: false,
         maxBoundsViscosity: 1.0
     }).setView([20, 0], 2);
 
+    // FIX: maxNativeZoom stops "Map not available" error on deep zoom
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
+        maxZoom: 18,
+        maxNativeZoom: 17
     }).addTo(satMap);
 
-    // === Guess Map Initialization ===
-    // noWrap: true stops infinite horizontal map repetition & fixes cross-ocean coordinate bugs
     const guessMap = L.map('guessmap', { 
         maxBounds: [[-90, -180], [90, 180]],
         maxBoundsViscosity: 0.8
@@ -182,19 +169,15 @@
         html: '<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);"></div>', 
         iconSize: [16, 16], iconAnchor: [8, 8] 
     });
-    const answerIcon = L.divIcon({ 
-        className: '',
-        html: '<div style="width:16px;height:16px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);"></div>', 
-        iconSize: [16, 16], iconAnchor: [8, 8] 
-    });
 
-    // Game Variables
+    // Variables
     let points = [];
     let totalRounds = 5;
     let currentDifficulty = DIFFICULTIES.medium;
     let round = 0, totalScore = 0;
     let answer = null, guess = null;
-    let guessMarker = null, answerMarker = null, line = null;
+    let currentBounds = null;
+    let guessMarker = null, targetRect = null, line = null;
     let phase = 'guessing';
     let gameHistory = [];
     let summaryLayers = [];
@@ -203,7 +186,7 @@
     const scoreEl = document.getElementById('score');
     const btn = document.getElementById('btn');
 
-    // === Load Locations CSV ===
+    // === CSV ===
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -234,7 +217,7 @@
         summaryLayers = [];
     }
 
-    // === Game Start / Restart Handlers ===
+    // === Game Start / Restart ===
     document.getElementById('start-btn').addEventListener('click', () => {
         totalRounds = parseInt(document.getElementById('rounds-select').value);
         const diffKey = document.getElementById('difficulty-select').value;
@@ -254,28 +237,25 @@
         document.getElementById('start-modal').style.display = 'flex';
     });
 
-    // === Round Control ===
+    // === Round ===
     function startRound() {
-        [guessMarker, answerMarker, line].forEach(l => l && guessMap.removeLayer(l));
-        guessMarker = answerMarker = line = guess = null;
+        [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
+        guessMarker = targetRect = line = guess = null;
         phase = 'guessing';
 
         // Select random location
         answer = points[Math.floor(Math.random() * points.length)];
 
-        // Set bounding box & locks around target coordinates
         const d = currentDifficulty.d;
-        const bounds = [
+        currentBounds = L.latLngBounds([
             [answer.lat - d, answer.lng - d],
             [answer.lat + d, answer.lng + d]
-        ];
+        ]);
 
-        // FIX: Restrict minZoom so player can ONLY zoom IN, never zoom OUT past starting scale
         satMap.setMinZoom(currentDifficulty.zoom);
-        satMap.setMaxBounds(bounds);
+        satMap.setMaxBounds(currentBounds);
         satMap.setView([answer.lat, answer.lng], currentDifficulty.zoom);
 
-        // Reset right guess map to global view
         guessMap.setView([20, 0], 2);
 
         round++;
@@ -284,7 +264,6 @@
         btn.disabled = true;
     }
 
-    // FIX: Normalize click coordinates using wrap() to prevent antimeridian / wrap-around bugs
     guessMap.on('click', e => {
         if (phase !== 'guessing') return;
         const wrapped = e.latlng.wrap();
@@ -295,34 +274,50 @@
         btn.disabled = false;
     });
 
-    // === Calculate Points (Max 5000) ===
-    function calculateScore(distanceKm) {
-        const points = Math.round(5000 * Math.exp(-distanceKm / 2000));
-        return Math.max(0, points);
-    }
-
     btn.addEventListener('click', () => {
         if (phase === 'guessing') {
             if (!guess) return;
 
-            const distMeters = L.latLng([answer.lat, answer.lng]).distanceTo(L.latLng(guess));
-            const distKm = distMeters / 1000;
-            const roundScore = calculateScore(distKm);
+            const guessLatLng = L.latLng(guess);
+            const isInside = currentBounds.contains(guessLatLng);
             
+            let roundScore = 0;
+            let distKm = 0;
+
+            if (isInside) {
+                // MAXIMUM SCORE if guess is anywhere inside the shown square!
+                roundScore = 5000;
+            } else {
+                // Calculate distance from center if outside
+                const centerLatLng = L.latLng([answer.lat, answer.lng]);
+                const distMeters = centerLatLng.distanceTo(guessLatLng);
+                distKm = distMeters / 1000;
+                roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 2000)));
+            }
+
             totalScore += roundScore;
-            gameHistory.push({ roundNum: round, answer, guess, distKm, roundScore });
+            gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
-            // Show answer marker and dashed line
-            const answerCoords = [answer.lat, answer.lng];
-            answerMarker = L.marker(answerCoords, { icon: answerIcon }).addTo(guessMap);
-            line = L.polyline([guess, answerCoords], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
-            guessMap.fitBounds(L.latLngBounds([guess, answerCoords]).pad(0.3));
+            targetRect = L.rectangle(currentBounds, {
+                color: '#ef4444',
+                weight: 2,
+                fillColor: '#ef4444',
+                fillOpacity: 0.2
+            }).addTo(guessMap);
 
-            const distText = distKm < 1 ? `${Math.round(distMeters)} m` : `${distKm.toFixed(1)} km`;
+            const center = [answer.lat, answer.lng];
+            if (!isInside) {
+                line = L.polyline([guess, center], { color: '#9ca3af', weight: 2, dashArray: '6,6' }).addTo(guessMap);
+                guessMap.fitBounds(L.latLngBounds([guess, ...currentBounds.toBBoxString().split(',').map(Number)]).pad(0.3));
+            } else {
+                guessMap.fitBounds(currentBounds.pad(0.4));
+            }
+
             const locationText = answer.name ? `📍 ${answer.name}, ${answer.country}` : `📍 ${answer.country}`;
+            const resultDetail = isInside ? `🎯 Perfect Hit (Inside Target Zone!)` : `Off by ${distKm.toFixed(1)} km`;
 
             scoreEl.textContent = `${totalScore.toLocaleString()} pts`;
-            statusEl.textContent = `+${roundScore} pts (${distText}) — ${locationText}`;
+            statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
             phase = 'revealed';
             btn.textContent = round >= totalRounds ? 'Finish Game' : 'Next Round';
@@ -341,12 +336,12 @@
         btn.disabled = true;
         btn.textContent = 'Game Over';
 
-        [guessMarker, answerMarker, line].forEach(l => l && guessMap.removeLayer(l));
+        [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
 
         const allCoords = [];
 
         gameHistory.forEach(h => {
-            const answerCoords = [h.answer.lat, h.answer.lng];
+            const centerCoords = [h.answer.lat, h.answer.lng];
 
             const gIcon = L.divIcon({
                 className: '',
@@ -354,23 +349,17 @@
                 iconSize: [22, 22], iconAnchor: [11, 11]
             });
 
-            const aIcon = L.divIcon({
-                className: '',
-                html: `<div style="width:22px;height:22px;border-radius:50%;background:#ef4444;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.4);">${h.roundNum}</div>`,
-                iconSize: [22, 22], iconAnchor: [11, 11]
-            });
-
             const mG = L.marker(h.guess, { icon: gIcon }).addTo(guessMap);
-            const mA = L.marker(answerCoords, { icon: aIcon }).addTo(guessMap);
 
-            const l = L.polyline([h.guess, answerCoords], {
-                color: h.roundScore > 3000 ? '#10b981' : '#f97316',
-                weight: 3,
-                dashArray: '6,6'
+            const rect = L.rectangle(h.bounds, {
+                color: h.isInside ? '#10b981' : '#ef4444',
+                weight: 2,
+                fillColor: h.isInside ? '#10b981' : '#ef4444',
+                fillOpacity: 0.25
             }).addTo(guessMap);
 
-            summaryLayers.push(mG, mA, l);
-            allCoords.push(h.guess, answerCoords);
+            summaryLayers.push(mG, rect);
+            allCoords.push(h.guess, centerCoords);
         });
 
         if (allCoords.length > 0) {
@@ -380,7 +369,7 @@
         const maxPossibleScore = totalRounds * 5000;
         const accuracy = Math.round((totalScore / maxPossibleScore) * 100);
 
-        let rank = "Tourist Explorer";
+        let rank = "";
         if (accuracy >= 85) rank = "";
         else if (accuracy >= 65) rank = "";
         else if (accuracy >= 40) rank = "";
