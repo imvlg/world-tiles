@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>World Tiles</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -64,7 +64,7 @@
         }
         .modal h2 { margin-top: 0; font-size: 24px; color: #fff; }
 
-        /* Tabs & Game Selection */
+        /* Mode Selectors */
         .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .mode-card {
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
@@ -88,14 +88,14 @@
         
         .mp-box { background: #0f172a; padding: 14px; border-radius: 12px; border: 1px dashed #475569; margin-top: 14px; text-align: center; }
 
-        /* Achievements & Friends Styling */
+        /* Achievements Styling */
         .achievements-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .achieve-item {
             background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 10px;
-            display: flex; align-items: center; gap: 10px; opacity: 0.4; filter: grayscale(1);
+            display: flex; align-items: center; gap: 10px; opacity: 0.35; filter: grayscale(1);
         }
         .achieve-item.unlocked { opacity: 1; filter: grayscale(0); border-color: #38bdf8; }
-        .achieve-icon { font-size: 22px; }
+        .achieve-icon { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
         .achieve-title { font-size: 12px; font-weight: 700; color: #fff; }
         .achieve-desc { font-size: 10px; color: #94a3b8; }
 
@@ -103,6 +103,26 @@
         .friend-chip {
             background: #0f172a; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155;
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px;
+        }
+
+        /* Mobile Adaptation CSS */
+        @media (max-width: 768px) {
+            #top-bar { padding: 0 14px; }
+            .brand { font-size: 16px; }
+            #game { flex-direction: column; }
+            .divider { width: 100%; height: 4px; }
+            #hud {
+                min-width: unset;
+                width: calc(100% - 24px);
+                bottom: 12px;
+                padding: 8px 14px;
+                gap: 8px;
+            }
+            .status-text { font-size: 12px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .score-badge, .timer-badge { font-size: 11px; padding: 2px 8px; }
+            .btn-primary { padding: 8px 12px; font-size: 12px; }
+            .modal { width: 95%; padding: 16px; }
+            .mode-selector, .stats-grid, .achievements-list { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -112,7 +132,7 @@
     <div id="top-bar">
         <div class="brand">World Tiles</div>
         <div class="user-profile">
-            <button id="profile-btn" class="avatar-btn">👤 <span id="username-display">Guest</span></button>
+            <button id="profile-btn" class="avatar-btn"><span id="username-display">Guest</span></button>
             <button id="menu-btn" class="btn-primary" style="padding: 6px 14px; font-size: 13px;">Main Menu</button>
         </div>
     </div>
@@ -121,7 +141,7 @@
     <div id="game">
         <div id="hud">
             <span id="status" class="status-text">Round 1</span>
-            <span id="timer" class="timer-badge">⏳ 03:00</span>
+            <span id="timer" class="timer-badge">03:00</span>
             <span id="score" class="score-badge">0 pts</span>
             <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Check</button>
         </div>
@@ -225,7 +245,7 @@
         </div>
     </div>
 
-    <!-- User Profile -->
+    <!-- User Profile Modal -->
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
             <h2>User Profile</h2>
@@ -269,7 +289,7 @@
         </div>
     </div>
 
-    <!-- End Game -->
+    <!-- End Game Modal -->
     <div id="end-modal" class="modal-overlay" style="display: none;">
         <div class="modal" style="text-align: center;">
             <h1>Game Over</h1>
@@ -294,10 +314,48 @@
     const TILES_DIFF = { easy: { d: 1.2 }, medium: { d: 0.5 }, hard: { d: 0.2 } };
 
     const ACHIEVEMENTS = [
-        { id: 'first_game', title: 'First Steps', desc: 'Complete 1 game' },
-        { id: 'perfect_hit', title: 'Bullseye', desc: 'Get a 5,000 pts score' },
-        { id: 'blitz_master', title: 'Speed Demon', desc: 'Play in Blitz mode' },
-        { id: 'town_explorer', title: 'Town Explorer', desc: 'Play in Mega Hard City mode' }
+        { 
+            id: 'first_game', 
+            title: 'First Steps', 
+            desc: 'Complete 1 game', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>`
+        },
+        { 
+            id: 'perfect_hit', 
+            title: 'Bullseye', 
+            desc: 'Get a 5,000 pts score', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>`
+        },
+        { 
+            id: 'blitz_master', 
+            title: 'Speed Demon', 
+            desc: 'Play in Blitz mode', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`
+        },
+        { 
+            id: 'town_explorer', 
+            title: 'Town Explorer', 
+            desc: 'Play in Mega Hard City mode', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>`
+        },
+        { 
+            id: 'high_scorer', 
+            title: 'Master Cartographer', 
+            desc: 'Score over 20,000 pts', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2zM18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`
+        },
+        { 
+            id: 'marathon', 
+            title: 'Marathoner', 
+            desc: 'Play a 15 rounds match', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
+        },
+        { 
+            id: 'veteran', 
+            title: 'Seasoned Traveler', 
+            desc: 'Complete 10 total games', 
+            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+        }
     ];
 
     // User Profile 
@@ -317,7 +375,7 @@
         document.getElementById('user-games').textContent = currentUser.gamesPlayed;
         document.getElementById('user-highscore').textContent = currentUser.highScore;
 
-        // Render Achievements
+        // Render Achievements with SVG Icons
         const achContainer = document.getElementById('achievements-container');
         achContainer.innerHTML = '';
         ACHIEVEMENTS.forEach(a => {
@@ -339,7 +397,7 @@
             friendContainer.innerHTML = '<div style="font-size:11px; color:#64748b; margin-top:6px;">No friends added yet.</div>';
         } else {
             currentUser.friends.forEach(fId => {
-                friendContainer.innerHTML += `<div class="friend-chip"><span>👤 ${fId}</span><span style="color:#10b981; font-size:10px;">● Online</span></div>`;
+                friendContainer.innerHTML += `<div class="friend-chip"><span>${fId}</span><span style="color:#10b981; font-size:10px;">● Online</span></div>`;
             });
         }
     }
@@ -403,7 +461,7 @@
     const timerEl = document.getElementById('timer');
     const btn = document.getElementById('btn');
 
-    // === CSV ===
+    // Load CSV Points
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -464,9 +522,8 @@
 
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
-    // === Start ===
+    // === Start Game ===
     document.getElementById('start-btn').addEventListener('click', () => {
-        // Filter city population by exact ranges
         if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             if (diff === 'easy') activePointsPool = allPoints.filter(p => p.pop >= 3000000);
@@ -476,13 +533,13 @@
                 activePointsPool = allPoints.filter(p => p.pop > 0 && p.pop < 100000);
                 unlockAchievement('town_explorer');
             }
-            
-            if (activePointsPool.length === 0) activePointsPool = allPoints; // Fallback
+            if (activePointsPool.length === 0) activePointsPool = allPoints;
         } else {
             activePointsPool = [...allPoints];
         }
 
         totalRounds = parseInt(document.getElementById('rounds-select').value);
+        if (totalRounds === 15) unlockAchievement('marathon');
 
         if (formatMode === 'timed_total') {
             timeRemaining = parseInt(document.getElementById('timer-total-select').value);
@@ -531,9 +588,8 @@
             updateTimerDisplay();
             if (timeRemaining <= 0) {
                 clearInterval(timerInterval);
-                // Force empty guess if user ran out of time
                 if (phase === 'guessing') {
-                    guess = [0, 0]; // Default missed guess
+                    guess = [0, 0];
                     processGuess();
                 }
             }
@@ -543,10 +599,10 @@
     function updateTimerDisplay() {
         const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
         const s = (timeRemaining % 60).toString().padStart(2, '0');
-        timerEl.textContent = `⏳ ${m}:${s}`;
+        timerEl.textContent = `${m}:${s}`;
     }
 
-    // === Round ===
+    // === Round Setup ===
     function startRound() {
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
         guessMarker = targetRect = line = guess = null;
@@ -649,7 +705,7 @@
         
         const resultDetail = isInside ? `Perfect!` : `Off by ${distKm.toFixed(1)} km`;
         if (currentGameMode === 'cities') {
-            const locationText = answer.name ? `📍 ${answer.name}, ${answer.country}` : `📍 ${answer.country}`;
+            const locationText = answer.name ? `${answer.name}, ${answer.country}` : `${answer.country}`;
             statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
         } else {
             statusEl.textContent = `+${roundScore} pts (${resultDetail})`;
@@ -669,9 +725,11 @@
 
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
 
-        // Achievements & Stats
         currentUser.gamesPlayed++;
         unlockAchievement('first_game');
+        if (currentUser.gamesPlayed >= 10) unlockAchievement('veteran');
+        if (totalScore > 20000) unlockAchievement('high_scorer');
+
         if (totalScore > currentUser.highScore) currentUser.highScore = totalScore;
         localStorage.setItem('geo_user_v2', JSON.stringify(currentUser));
 
@@ -707,6 +765,12 @@
 
         document.getElementById('end-modal').style.display = 'flex';
     }
+
+    // Mobile orientation
+    window.addEventListener('resize', () => {
+        satMap.invalidateSize();
+        guessMap.invalidateSize();
+    });
 
     updateProfileUI();
     </script>
