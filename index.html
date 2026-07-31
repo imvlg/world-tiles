@@ -76,11 +76,11 @@
             <p>Explore satellite imagery and guess which region is shown on the map!</p>
             
             <div class="form-group">
-                <label for="difficulty-select">Map View Scale:</label>
+                <label for="difficulty-select">Map Scale (Difficulty):</label>
                 <select id="difficulty-select">
-                    <option value="easy">Easy (~250 x 250 km region)</option>
-                    <option value="medium" selected>Medium (~100 x 100 km region)</option>
-                    <option value="hard">Hard (~40 x 40 km region)</option>
+                    <option value="easy">Easy (Large Region / Countries view)</option>
+                    <option value="medium" selected>Medium (Province / District view)</option>
+                    <option value="hard">Hard (City / Local Area view)</option>
                 </select>
             </div>
 
@@ -132,11 +132,10 @@
     </div>
 
     <script>
-    // Region size parameters (d = half-span in degrees)
     const DIFFICULTIES = {
-        easy:   { d: 1.2 },  // ~250 km region
-        medium: { d: 0.5 },  // ~100 km region
-        hard:   { d: 0.2 }   // ~40 km region
+        easy:   { zoom: 6 },
+        medium: { zoom: 8 },
+        hard:   { zoom: 11 }
     };
 
     // === Satellite Map ===
@@ -226,13 +225,12 @@
         round = 0; totalScore = 0; gameHistory = [];
         clearSummaryLayers();
         scoreEl.textContent = `0 / ${totalRounds * 5000} pts`;
-        
-        // Оновлюємо розмір карти після закриття модалки
+
         setTimeout(() => {
             satMap.invalidateSize();
             guessMap.invalidateSize();
             startRound();
-        }, 100);
+        }, 50);
     });
 
     document.getElementById('restart-btn').addEventListener('click', () => {
@@ -250,25 +248,21 @@
 
         answer = points[Math.floor(Math.random() * points.length)];
 
-        // 1. Створюємо фіксований квадрат за координатами
-        const d = currentDifficulty.d;
-        currentBounds = L.latLngBounds([
-            [answer.lat - d, answer.lng - d],
-            [answer.lat + d, answer.lng + d]
-        ]);
-
-        // 2. Скидаємо минулі обмежувачі для точності
+        // 1. Повністю скидаємо попередні обмеження перед розрахунком
         satMap.setMinZoom(1);
         satMap.setMaxBounds(null);
+        satMap.invalidateSize();
 
-        // 3. Підганяємо супутникову карту під цей квадрат
-        satMap.fitBounds(currentBounds);
+        // 2. Встановлюємо позицію супутника за зумом
+        const targetZoom = currentDifficulty.zoom;
+        satMap.setView([answer.lat, answer.lng], targetZoom, { animate: false });
 
-        // 4. Встановлюємо нові ліміти зуму і переміщення
-        setTimeout(() => {
-            satMap.setMinZoom(satMap.getZoom());
-            satMap.setMaxBounds(currentBounds.pad(1.0));
-        }, 100);
+        // 3. Зчитуємо ФАКТИЧНІ межі екрана супутника
+        currentBounds = satMap.getBounds();
+
+        // 4. Фіксуємо мінімальний зум та межі для поточного раунду
+        satMap.setMinZoom(targetZoom);
+        satMap.setMaxBounds(currentBounds.pad(0.8));
 
         guessMap.setView([20, 0], 2);
 
@@ -310,7 +304,7 @@
             totalScore += roundScore;
             gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
-            // Малюємо точно той самий квадрат на карті відповідей
+            // Відображаємо точний прямокутник видимої території
             targetRect = L.rectangle(currentBounds, {
                 color: '#ef4444',
                 weight: 2,
@@ -382,10 +376,10 @@
         const maxPossibleScore = totalRounds * 5000;
         const accuracy = Math.round((totalScore / maxPossibleScore) * 100);
 
-        let rank = "Tourist Explorer";
-        if (accuracy >= 85) rank = "Master Cartographer 🌍";
-        else if (accuracy >= 65) rank = "Globe Trotter ✈️";
-        else if (accuracy >= 40) rank = "Regional Guide 🗺️";
+        let rank = "";
+        if (accuracy >= 85) rank = "";
+        else if (accuracy >= 65) rank = "";
+        else if (accuracy >= 40) rank = "";
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} / ${maxPossibleScore.toLocaleString()}`;
         document.getElementById('end-accuracy').textContent = `${accuracy}%`;
