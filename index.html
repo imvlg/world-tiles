@@ -79,7 +79,6 @@
         .multiplayer-box { background: #0f172a; padding: 12px; border-radius: 8px; border: 1px dashed #38bdf8; margin: 12px 0; }
         .multiplayer-box input { border: 1px solid #38bdf8; background: #1e293b; }
 
-        /* Custom Country Dropdown UI */
         .custom-dropdown-btn {
             width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
             border: 1px solid #334155; color: #fff; font-size: 13px; cursor: pointer;
@@ -176,9 +175,9 @@
             <div id="tiles-diff-group" class="form-group">
                 <label>Tile View Size (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy" selected>Easy (250 km Large Region)</option>
-                    <option value="medium">Medium (60 km Metropolitan Area)</option>
-                    <option value="hard">Hard (15 km Local Detail)</option>
+                    <option value="easy" selected>Easy (600 km Large Region)</option>
+                    <option value="medium">Medium (200 km Metropolitan Area)</option>
+                    <option value="hard">Hard (50 km Local Detail)</option>
                 </select>
             </div>
 
@@ -220,7 +219,6 @@
                 </select>
             </div>
             
-            <!-- Повернутий Мультиплеєр -->
             <div class="multiplayer-box">
                 <div class="form-group" style="margin: 0;">
                     <label style="color: #38bdf8;">Multiplayer Room (Seed):</label>
@@ -278,7 +276,6 @@
     </div>
 
     <script>
-    // 1. ВАЖЛИВЕ ВИПРАВЛЕННЯ СЛОВНИКА КРАЇН (Із 2-літерного коду в повну назву)
     const ISO_TO_COUNTRY = {
         "AD": "Andorra", "AE": "United Arab Emirates", "AF": "Afghanistan", "AL": "Albania",
         "AM": "Armenia", "AO": "Angola", "AR": "Argentina", "AT": "Austria", "AU": "Australia",
@@ -308,10 +305,9 @@
         if (cCode.length === 2) {
             return `<img src="https://flagcdn.com/20x15/${cCode.toLowerCase()}.png" class="flag-img" alt="${fullName}"> ${fullName}`;
         }
-        return fullName; // fallback
+        return fullName;
     }
 
-    // Multiplayer Seed Generator
     function xmur3(str) {
         let h = 1779033703 ^ str.length;
         for(let i = 0; i < str.length; i++) {
@@ -332,7 +328,7 @@
           return ((t ^ t >>> 14) >>> 0) / 4294967296;
         }
     }
-    let myRNG = Math.random; // Default to normal random
+    let myRNG = Math.random;
 
     function shuffle(array) {
         let m = array.length, t, i;
@@ -343,7 +339,6 @@
         return array;
     }
 
-    // Load User
     function loadSavedUser() {
         const keys = ['geo_user_v5', 'geo_user_v4', 'geo_user'];
         for (let key of keys) {
@@ -403,8 +398,17 @@
     function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
     document.getElementById('profile-btn').addEventListener('click', openProfileModal);
 
-    // Maps Setup
-    const satMap = L.map('satellite', { zoomControl: true, attributionControl: false }).setView([20, 0], 2);
+    // Супутникова карта ЗАБЛОКОВАНА від будь-якого перетягування чи виходу за рамки
+    const satMap = L.map('satellite', { 
+        zoomControl: false, 
+        attributionControl: false, 
+        dragging: false, 
+        scrollWheelZoom: false, 
+        doubleClickZoom: false, 
+        boxZoom: false, 
+        touchZoom: false 
+    }).setView([20, 0], 2);
+    
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
 
     const guessMap = L.map('guessmap', { maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 0.8 }).setView([20, 0], 2);
@@ -434,7 +438,6 @@
 
     const statusEl = document.getElementById('status'), scoreEl = document.getElementById('score'), btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer-display');
 
-    // Parse CSV
     fetch('points.csv').then(r => r.text()).then(text => {
         const lines = text.trim().split('\n');
         lines.shift();
@@ -489,7 +492,6 @@
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
     document.getElementById('start-btn').addEventListener('click', () => {
-        // Setup RNG for Multiplayer
         const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
         if (roomCode) {
             let seed = xmur3(roomCode);
@@ -500,18 +502,23 @@
 
         let pool = [];
         if (currentGameMode === 'country') {
-            pool = allPoints.filter(p => p.country === selectedCountry);
+            const countryPoints = allPoints.filter(p => p.country === selectedCountry);
+            const uniqueMap = new Map();
+            countryPoints.forEach(p => uniqueMap.set(`${p.lat},${p.lng}`, p));
+            pool = Array.from(uniqueMap.values());
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             let cityPool = allPoints.filter(p => p.pop > 10000);
             if (cityPool.length === 0) cityPool = allPoints.filter(p => p.name !== '');
-            cityPool.sort((a, b) => b.pop - a.pop); // Sort deterministically before slice
+            cityPool.sort((a, b) => b.pop - a.pop);
             const total = cityPool.length;
             if (diff === 'easy') pool = cityPool.slice(0, Math.floor(total * 0.15));
             else if (diff === 'medium') pool = cityPool.slice(Math.floor(total * 0.15), Math.floor(total * 0.50));
             else pool = cityPool.slice(Math.floor(total * 0.50));
         } else {
-            pool = [...allPoints];
+            const uniqueMap = new Map();
+            allPoints.forEach(p => uniqueMap.set(`${p.lat},${p.lng}`, p));
+            pool = Array.from(uniqueMap.values());
         }
 
         if (pool.length === 0) pool = [...allPoints];
@@ -558,35 +565,44 @@
         if (activePool.length === 0) activePool = shuffle([...allPoints]);
         answer = activePool.pop();
 
-        // 3. Точні розміри World Tiles та динаміка Міст
         let delta;
-        if (currentGameMode === 'cities') {
+        if (currentGameMode === 'country') {
+            // Адаптивний розмір з урахуванням габаритів конкретної країни
+            const cPoints = allPoints.filter(p => p.country === selectedCountry);
+            const lats = cPoints.map(p => p.lat); const lngs = cPoints.map(p => p.lng);
+            const latSpan = Math.max(Math.max(...lats) - Math.min(...lats), 1);
+            const lngSpan = Math.max(Math.max(...lngs) - Math.min(...lngs), 1);
+            let dLat = latSpan * 0.15;
+            let dLng = lngSpan * 0.15;
+            dLat = Math.min(Math.max(dLat, 0.8), 12);
+            dLng = Math.min(Math.max(dLng, 0.8), 12);
+            currentBounds = L.latLngBounds([[answer.lat - dLat, answer.lng - dLng], [answer.lat + dLat, answer.lng + dLng]]);
+        } else if (currentGameMode === 'cities') {
             let pop = answer.pop || 50000;
-            let radiusKm = 2 + (Math.sqrt(pop) / 80); // Динамічний розмір від населення
-            radiusKm = Math.min(25, Math.max(3, radiusKm)); // Між 3 і 25 км
+            let radiusKm = 2 + (Math.sqrt(pop) / 80);
+            radiusKm = Math.min(25, Math.max(3, radiusKm));
             delta = radiusKm / 111;
+            currentBounds = L.latLngBounds([[answer.lat - delta, answer.lng - delta], [answer.lat + delta, answer.lng + delta]]);
         } else {
+            // Збільшені розміри World Tiles (Easy - 600 км, Medium - 200 км, Hard - 50 км)
             const diff = document.getElementById('tiles-difficulty').value;
-            if (diff === 'easy') delta = 250 / 111 / 2;       // 250 km
-            else if (diff === 'medium') delta = 60 / 111 / 2; // 60 km
-            else delta = 15 / 111 / 2;                        // 15 km
+            if (diff === 'easy') delta = 600 / 111 / 2;
+            else if (diff === 'medium') delta = 200 / 111 / 2;
+            else delta = 50 / 111 / 2;
+            currentBounds = L.latLngBounds([[answer.lat - delta, answer.lng - delta], [answer.lat + delta, answer.lng + delta]]);
         }
 
-        currentBounds = L.latLngBounds([ [answer.lat - delta, answer.lng - delta], [answer.lat + delta, answer.lng + delta] ]);
-
-        // 4. Фікс камери: pad() дозволяє бачити всю зону без свайпів!
         satMap.fitBounds(currentBounds.pad(0.1));
         updateSatelliteMask(currentBounds);
 
         satMap.setMaxBounds(currentBounds.pad(0.2)); 
-        satMap.setMinZoom(satMap.getBoundsZoom(currentBounds, false)); // Зум не блокує перегляд усієї зони
+        satMap.setMinZoom(satMap.getBoundsZoom(currentBounds, false));
         satMap.setMaxZoom(18);
 
         round++;
         statusEl.textContent = `Round ${round} of ${totalRounds}`;
         btn.textContent = 'Check'; btn.disabled = true;
 
-        // Таймери
         const timerSetting = parseInt(document.getElementById('timer-select').value);
         if (timerSetting > 0) {
             if (timerMode === 'round') timerLeft = timerSetting;
