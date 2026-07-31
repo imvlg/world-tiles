@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>World Tiles - Online Multiplayer</title>
+    <title>World Tiles</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -39,10 +39,11 @@
             z-index: 1000; background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px 24px; border-radius: 16px; display: flex; align-items: center;
-            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 460px;
+            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 500px;
         }
-        .status-text { font-size: 14px; font-weight: 500; }
+        .status-text { font-size: 13px; font-weight: 500; }
         .score-badge { background: #0284c7; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+        .opp-score-badge { background: #f59e0b; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; display: none; }
         .timer-badge { background: #e11d48; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; display: none; }
 
         .btn-primary {
@@ -61,20 +62,20 @@
 
         .modal {
             background: #1e293b; border: 1px solid #334155;
-            padding: 24px; border-radius: 24px; width: 90%; max-width: 560px;
+            padding: 24px; border-radius: 24px; width: 90%; max-width: 580px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-height: 90vh; overflow-y: auto;
         }
         .modal h2 { margin-top: 0; font-size: 22px; color: #fff; }
 
         /* Mode Selectors */
-        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .mode-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .mode-card {
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
-            padding: 12px; cursor: pointer; text-align: center; transition: 0.2s;
+            padding: 10px; cursor: pointer; text-align: center; transition: 0.2s;
         }
         .mode-card.active { border-color: #38bdf8; background: #1e293b; }
-        .mode-card h3 { margin: 0 0 4px 0; font-size: 15px; color: #38bdf8; }
-        .mode-card p { margin: 0; font-size: 11px; color: #94a3b8; }
+        .mode-card h3 { margin: 0 0 4px 0; font-size: 13px; color: #38bdf8; }
+        .mode-card p { margin: 0; font-size: 10px; color: #94a3b8; }
 
         .form-group { margin: 10px 0; text-align: left; }
         .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
@@ -88,11 +89,9 @@
         .stat-value { font-size: 18px; font-weight: 700; color: #38bdf8; }
         .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
 
-        /* Level Bar UI */
         .level-progress-bg { background: #0f172a; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #334155; overflow: hidden; margin-top: 6px; }
         .level-progress-fill { background: linear-gradient(90deg, #0284c7, #38bdf8); height: 100%; width: 0%; transition: width 0.3s; }
 
-        /* Achievements */
         .achievements-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
         .achieve-item {
             background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 10px;
@@ -103,22 +102,26 @@
         .achieve-title { font-size: 11px; font-weight: 700; color: #fff; }
         .achieve-desc { font-size: 9px; color: #94a3b8; }
 
-        /* Round Results Breakdown Table */
         .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 140px; overflow-y: auto; }
         .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
         .breakdown-row:last-child { border-bottom: none; }
 
-        /* Multiplayer Section */
         .mp-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-top: 10px; text-align: center; }
         .mp-code { font-size: 18px; font-weight: 800; color: #38bdf8; letter-spacing: 2px; margin: 6px 0; user-select: all; }
+
+        /* Winner Result Banner */
+        .winner-banner { font-size: 26px; font-weight: 900; margin: 10px 0 4px 0; letter-spacing: 1px; }
+        .win-text { color: #10b981; }
+        .lose-text { color: #ef4444; }
+        .draw-text { color: #f59e0b; }
 
         @media (max-width: 768px) {
             #top-bar { padding: 0 12px; }
             .brand { font-size: 16px; }
             #game { flex-direction: column; }
             .divider { width: 100%; height: 4px; }
-            #hud { min-width: unset; width: calc(100% - 24px); bottom: 12px; padding: 8px 12px; gap: 8px; }
-            .status-text { font-size: 11px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            #hud { min-width: unset; width: calc(100% - 24px); bottom: 12px; padding: 8px 12px; gap: 6px; }
+            .status-text { font-size: 10px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .modal { width: 95%; padding: 16px; }
             .mode-selector, .stats-grid, .achievements-list { grid-template-columns: 1fr; }
         }
@@ -141,7 +144,8 @@
         <div id="hud">
             <span id="status" class="status-text">Round 1</span>
             <span id="timer" class="timer-badge">03:00</span>
-            <span id="score" class="score-badge">0 pts</span>
+            <span id="score" class="score-badge">You: 0 pts</span>
+            <span id="opp-score" class="opp-score-badge">Opponent: 0 pts</span>
             <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Check</button>
         </div>
 
@@ -158,12 +162,11 @@
                 <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
             </div>
             
-            <!-- Match Type Selector -->
             <div class="form-group">
                 <label>Match Type:</label>
                 <select id="match-type-select" onchange="toggleMatchType()">
                     <option value="solo" selected>Singleplayer</option>
-                    <option value="online">Multiplayer (Online PeerJS)</option>
+                    <option value="online">Multiplayer</option>
                 </select>
             </div>
 
@@ -176,7 +179,7 @@
                 <div id="mp-host-info" style="display: none;">
                     <span style="font-size: 11px; color: #94a3b8;">Share Room Code with your friend:</span>
                     <div id="room-code-display" class="mp-code">GENERATING...</div>
-                    <span id="mp-status-text" style="font-size: 11px; color: #f59e0b;">Waiting for opponent to connect...</span>
+                    <span id="mp-status-text" style="font-size: 11px; color: #f59e0b;">Waiting for opponent...</span>
                 </div>
                 <div id="mp-join-info" style="display: none;">
                     <input type="text" id="join-code-input" placeholder="Enter Room Code..." style="text-align: center; font-weight: 700; text-transform: uppercase;">
@@ -187,20 +190,37 @@
             <div class="mode-selector" style="margin-top: 12px;">
                 <div class="mode-card active" data-mode="tiles" onclick="selectGameMode('tiles')">
                     <h3>World Tiles</h3>
-                    <p>Guess region boundaries from satellite views</p>
+                    <p>Global random regions</p>
                 </div>
                 <div class="mode-card" data-mode="cities" onclick="selectGameMode('cities')">
-                    <h3>Guess the City</h3>
-                    <p>Identify specific cities worldwide</p>
+                    <h3>Guess City</h3>
+                    <p>Global city locations</p>
+                </div>
+                <div class="mode-card" data-mode="country" onclick="selectGameMode('country')">
+                    <h3>Country Mode</h3>
+                    <p>Explore a specific country</p>
+                </div>
+            </div>
+
+            <!-- Country Selection Group -->
+            <div id="country-select-group" class="form-group" style="display: none;">
+                <label>Choose Country:</label>
+                <select id="country-select"></select>
+                <div style="margin-top: 6px;">
+                    <label>Country Location Pool:</label>
+                    <select id="country-pool-type">
+                        <option value="all" selected>All Locations (Adaptive Scaling)</option>
+                        <option value="cities">Cities Only</option>
+                    </select>
                 </div>
             </div>
 
             <div id="tiles-diff-group" class="form-group">
                 <label>Tile View Size (Difficulty):</label>
                 <select id="tiles-difficulty">
-                    <option value="easy">Easy (~350 km area)</option>
-                    <option value="medium" selected>Medium (~80 km area)</option>
-                    <option value="hard">Hard (~8 km detailed area)</option>
+                    <option value="easy">Easy (Large Area)</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard (Small Detailed View)</option>
                 </select>
             </div>
 
@@ -310,21 +330,22 @@
     <!-- End Game Modal -->
     <div id="end-modal" class="modal-overlay" style="display: none;">
         <div class="modal" style="text-align: center;">
+            <div id="winner-banner" class="winner-banner"></div>
             <h1 style="margin-top:0;">Game Completed!</h1>
             <p id="end-rank" style="font-weight: 600; color: #38bdf8; font-size: 15px; margin-bottom: 8px;"></p>
             
             <div class="stats-grid">
                 <div class="stat-card">
                     <div id="end-score" class="stat-value">0</div>
-                    <div class="stat-label">Total Score</div>
+                    <div class="stat-label">Your Score</div>
                 </div>
                 <div class="stat-card">
                     <div id="end-xp" class="stat-value">+0 XP</div>
                     <div class="stat-label">XP Earned</div>
                 </div>
                 <div class="stat-card">
-                    <div id="end-accuracy" class="stat-value">0%</div>
-                    <div class="stat-label">Accuracy</div>
+                    <div id="end-opp-score" class="stat-value">N/A</div>
+                    <div class="stat-label">Opponent Score</div>
                 </div>
             </div>
 
@@ -335,28 +356,20 @@
     </div>
 
     <script>
-    // Adjusted bounds so tile difficulty differences are clear
     const TILES_DIFF = { easy: { d: 3.5 }, medium: { d: 0.8 }, hard: { d: 0.08 } };
 
     const ACHIEVEMENTS = [
         { id: 'first_game', title: 'First Steps', desc: 'Play 1 game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>` },
         { id: 'perfect_hit', title: 'Bullseye', desc: 'Get 5,000 pts in a round', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>` },
-        { id: 'blitz_master', title: 'Speed Demon', desc: 'Play in Blitz mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>` },
-        { id: 'town_explorer', title: 'Town Explorer', desc: 'Play Mega Hard City mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>` },
+        { id: 'country_expert', title: 'Patriot', desc: 'Play in Country Mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>` },
         { id: 'mp_match', title: 'Duelist', desc: 'Play an online match', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>` },
         { id: 'level_5', title: 'Expert Cartographer', desc: 'Reach Profile Level 5', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` }
     ];
 
-    // User Profile Initialization
     let currentUser = JSON.parse(localStorage.getItem('geo_user_v3')) || {
         id: '#GEO-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
         name: 'Player' + Math.floor(1000 + Math.random() * 9000),
-        gamesPlayed: 0,
-        highScore: 0,
-        perfectHits: 0,
-        xp: 0,
-        level: 1,
-        unlockedAchieve: []
+        gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, level: 1, unlockedAchieve: []
     };
 
     function getXpRequiredForLevel(lvl) {
@@ -374,9 +387,7 @@
         currentUser.xp += Math.round(amount);
         const newLevel = calculateLevel(currentUser.xp);
         currentUser.level = newLevel;
-
         if (newLevel >= 5) unlockAchievement('level_5');
-
         localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
         updateProfileUI();
     }
@@ -451,11 +462,9 @@
                     currentUser = parsed;
                     localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
                     updateProfileUI();
-                    alert("Profile loaded successfully!");
+                    alert("Profile loaded!");
                 }
-            } catch(e) {
-                alert("Invalid backup file.");
-            }
+            } catch(e) { alert("Invalid backup file."); }
         }
     }
 
@@ -498,22 +507,22 @@
     // State Variables
     let allPoints = [], activePointsPool = [], presetGamePoints = [];
     let currentGameMode = 'tiles', formatMode = 'rounds', matchType = 'solo';
-    let timeRemaining = 0, timerInterval = null;
-    let totalRounds = 5, round = 0, totalScore = 0;
+    let totalRounds = 5, round = 0, totalScore = 0, opponentTotalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
     let phase = 'guessing', gameHistory = [], summaryLayers = [];
     let perfectHitsCountInGame = 0;
 
-    // Multiplayer (PeerJS) State
-    let peer = null, peerConn = null, isHost = false, opponentGuess = null;
+    // PeerJS Networking Variables
+    let peer = null, peerConn = null, isHost = false;
 
     const statusEl = document.getElementById('status');
     const scoreEl = document.getElementById('score');
+    const oppScoreEl = document.getElementById('opp-score');
     const timerEl = document.getElementById('timer');
     const btn = document.getElementById('btn');
 
-    // Load CSV
+    // Load CSV & Populate Countries
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -527,6 +536,15 @@
                 };
             }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
+            // Populate Country Selector
+            const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
+            const cSelect = document.getElementById('country-select');
+            countries.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                cSelect.appendChild(opt);
+            });
+
             const startBtn = document.getElementById('start-btn');
             startBtn.textContent = 'Start Game';
             startBtn.disabled = false;
@@ -538,9 +556,10 @@
     function toggleMatchType() {
         matchType = document.getElementById('match-type-select').value;
         document.getElementById('mp-setup-box').style.display = matchType === 'online' ? 'block' : 'none';
+        oppScoreEl.style.display = matchType === 'online' ? 'inline-block' : 'none';
     }
 
-    // PeerJS Networking
+    // PeerJS Multiplayer Logic
     function initHostRoom() {
         isHost = true;
         const code = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -550,7 +569,7 @@
         document.getElementById('room-code-display').textContent = `WT-${code}`;
 
         peer.on('open', () => {
-            document.getElementById('mp-status-text').textContent = 'Waiting for opponent to connect...';
+            document.getElementById('mp-status-text').textContent = 'Waiting for opponent to join...';
         });
 
         peer.on('connection', conn => {
@@ -581,18 +600,22 @@
 
     function setupPeerListeners() {
         peerConn.on('open', () => {
-            alert('Connected to room!');
+            alert('Connected to host!');
             unlockAchievement('mp_match');
         });
 
         peerConn.on('data', data => {
             if (data.type === 'START_GAME') {
+                // Sync settings from host
                 presetGamePoints = data.points;
                 totalRounds = data.rounds;
+                currentGameMode = data.mode;
+                
                 document.getElementById('lobby-modal').style.display = 'none';
-                startMultiplayerMatch();
-            } else if (data.type === 'OPPONENT_GUESS') {
-                opponentGuess = data.guess;
+                startMatch();
+            } else if (data.type === 'SYNC_ROUND_SCORE') {
+                opponentTotalScore = data.totalScore;
+                oppScoreEl.textContent = `Opponent: ${opponentTotalScore} pts`;
             }
         });
     }
@@ -602,36 +625,42 @@
         document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
         document.querySelector(`.mode-card[data-mode="${mode}"]`).classList.add('active');
 
-        document.getElementById('tiles-diff-group').style.display = mode === 'tiles' ? 'block' : 'none';
+        document.getElementById('tiles-diff-group').style.display = (mode === 'tiles' || mode === 'country') ? 'block' : 'none';
         document.getElementById('cities-diff-group').style.display = mode === 'cities' ? 'block' : 'none';
+        document.getElementById('country-select-group').style.display = mode === 'country' ? 'block' : 'none';
+
+        if (mode === 'country') unlockAchievement('country_expert');
     }
 
     function toggleFormatOptions() {
         formatMode = document.getElementById('format-select').value;
         document.getElementById('rounds-group').style.display = (formatMode === 'rounds' || formatMode === 'timed_round') ? 'block' : 'none';
-        document.getElementById('timed-total-group').style.display = formatMode === 'timed_total' ? 'block' : 'none';
-        document.getElementById('timed-round-group').style.display = formatMode === 'timed_round' ? 'block' : 'none';
     }
 
     function openLobby() {
-        clearInterval(timerInterval);
         document.getElementById('end-modal').style.display = 'none';
         document.getElementById('lobby-modal').style.display = 'flex';
     }
 
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
-    // === Start Game ===
+    // === Start Match ===
     document.getElementById('start-btn').addEventListener('click', () => {
-        if (currentGameMode === 'cities') {
+        // Pool Filtering
+        if (currentGameMode === 'country') {
+            const selectedC = document.getElementById('country-select').value;
+            const pType = document.getElementById('country-pool-type').value;
+            let cPoints = allPoints.filter(p => p.country === selectedC);
+            if (pType === 'cities') {
+                cPoints = cPoints.filter(p => p.pop > 0);
+            }
+            activePointsPool = cPoints.length > 0 ? cPoints : allPoints.filter(p => p.country === selectedC);
+        } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             if (diff === 'easy') activePointsPool = allPoints.filter(p => p.pop >= 3000000);
             else if (diff === 'medium') activePointsPool = allPoints.filter(p => p.pop >= 1000000 && p.pop < 3000000);
             else if (diff === 'hard') activePointsPool = allPoints.filter(p => p.pop >= 100000 && p.pop < 1000000);
-            else if (diff === 'expert') {
-                activePointsPool = allPoints.filter(p => p.pop > 0 && p.pop < 100000);
-                unlockAchievement('town_explorer');
-            }
+            else if (diff === 'expert') activePointsPool = allPoints.filter(p => p.pop > 0 && p.pop < 100000);
             if (activePointsPool.length === 0) activePointsPool = allPoints;
         } else {
             activePointsPool = [...allPoints];
@@ -641,22 +670,29 @@
 
         if (matchType === 'online' && isHost && peerConn) {
             presetGamePoints = [];
-            for(let i = 0; i < totalRounds; i++) {
+            for (let i = 0; i < totalRounds; i++) {
                 presetGamePoints.push(activePointsPool[Math.floor(Math.random() * activePointsPool.length)]);
             }
-            peerConn.send({ type: 'START_GAME', points: presetGamePoints, rounds: totalRounds });
+            peerConn.send({
+                type: 'START_GAME',
+                points: presetGamePoints,
+                rounds: totalRounds,
+                mode: currentGameMode
+            });
         }
 
         document.getElementById('lobby-modal').style.display = 'none';
-        startMultiplayerMatch();
+        startMatch();
     });
 
-    function startMultiplayerMatch() {
-        round = 0; totalScore = 0; perfectHitsCountInGame = 0; gameHistory = [];
+    function startMatch() {
+        round = 0; totalScore = 0; opponentTotalScore = 0; perfectHitsCountInGame = 0; gameHistory = [];
         summaryLayers.forEach(l => guessMap.removeLayer(l));
         summaryLayers = [];
 
-        scoreEl.textContent = `0 pts`;
+        scoreEl.textContent = `You: 0 pts`;
+        oppScoreEl.textContent = `Opponent: 0 pts`;
+        oppScoreEl.style.display = matchType === 'online' ? 'inline-block' : 'none';
         
         setTimeout(() => {
             satMap.invalidateSize();
@@ -668,17 +704,30 @@
     // === Round Setup ===
     function startRound() {
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
-        guessMarker = targetRect = line = guess = opponentGuess = null;
+        guessMarker = targetRect = line = guess = null;
         phase = 'guessing';
 
-        if (presetGamePoints.length > 0) {
+        if (presetGamePoints.length > 0 && presetGamePoints[round]) {
             answer = presetGamePoints[round];
         } else {
             answer = activePointsPool[Math.floor(Math.random() * activePointsPool.length)];
         }
 
+        // Calculating Dynamic Bounds (d)
         let d = 0.8;
-        if (currentGameMode === 'tiles') {
+        if (currentGameMode === 'country') {
+            const selectedC = answer.country || document.getElementById('country-select').value;
+            const cPoints = allPoints.filter(p => p.country === selectedC);
+            if (cPoints.length > 0) {
+                const lats = cPoints.map(p => p.lat);
+                const lngs = cPoints.map(p => p.lng);
+                const span = Math.max((Math.max(...lats) - Math.min(...lats) + Math.max(...lngs) - Math.min(...lngs)) / 2, 0.4);
+                
+                const diffKey = document.getElementById('tiles-difficulty').value;
+                const factor = diffKey === 'easy' ? 0.25 : (diffKey === 'medium' ? 0.06 : 0.015);
+                d = Math.max(0.006, Math.min(3.0, span * factor));
+            }
+        } else if (currentGameMode === 'tiles') {
             const diffKey = document.getElementById('tiles-difficulty').value;
             d = TILES_DIFF[diffKey].d;
         } else {
@@ -733,10 +782,6 @@
     function processGuess() {
         if (!guess) return;
 
-        if (peerConn) {
-            peerConn.send({ type: 'OPPONENT_GUESS', guess: guess });
-        }
-
         const guessLatLng = L.latLng(guess);
         const isInside = currentBounds.contains(guessLatLng);
         
@@ -756,6 +801,11 @@
         totalScore += roundScore;
         gameHistory.push({ roundNum: round, answer, guess, bounds: currentBounds, isInside, distKm, roundScore });
 
+        // Send score live to peer
+        if (peerConn) {
+            peerConn.send({ type: 'SYNC_ROUND_SCORE', totalScore: totalScore });
+        }
+
         targetRect = L.rectangle(currentBounds, {
             color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.25
         }).addTo(guessMap);
@@ -768,7 +818,7 @@
             guessMap.fitBounds(currentBounds.pad(0.4));
         }
 
-        scoreEl.textContent = `${totalScore.toLocaleString()} pts`;
+        scoreEl.textContent = `You: ${totalScore.toLocaleString()} pts`;
         
         const resultDetail = isInside ? `Bullseye!` : `Off by ${distKm.toFixed(1)} km`;
         const locationText = answer.name ? `${answer.name}, ${answer.country}` : `${answer.country}`;
@@ -779,7 +829,7 @@
         btn.disabled = false;
     }
 
-    // === End Game Modal ===
+    // === End Game ===
     function showEndGameModal() {
         phase = 'finished';
         btn.disabled = true;
@@ -808,10 +858,28 @@
         const maxScore = gameHistory.length * 5000;
         const accuracy = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
+        // Multiplayer Victory Check
+        const winnerBanner = document.getElementById('winner-banner');
+        if (matchType === 'online') {
+            document.getElementById('end-opp-score').textContent = `${opponentTotalScore.toLocaleString()} pts`;
+            if (totalScore > opponentTotalScore) {
+                winnerBanner.textContent = "VICTORY";
+                winnerBanner.className = "winner-banner win-text";
+            } else if (totalScore < opponentTotalScore) {
+                winnerBanner.textContent = "DEFEAT";
+                winnerBanner.className = "winner-banner lose-text";
+            } else {
+                winnerBanner.textContent = "DRAW";
+                winnerBanner.className = "winner-banner draw-text";
+            }
+        } else {
+            winnerBanner.textContent = "";
+            document.getElementById('end-opp-score').textContent = "N/A";
+        }
+
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} pts`;
         document.getElementById('end-xp').textContent = `+${earnedXP} XP`;
-        document.getElementById('end-accuracy').textContent = `${accuracy}%`;
-        document.getElementById('end-rank').textContent = accuracy >= 80 ? "Master Navigator" : "Globe Explorer";
+        document.getElementById('end-rank').textContent = accuracy >= 80 ? "Master Cartographer" : "Globe Explorer";
 
         document.getElementById('end-modal').style.display = 'flex';
     }
