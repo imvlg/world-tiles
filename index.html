@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,7 +10,7 @@
         * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
         body { margin: 0; padding: 0; background: #0f172a; color: #f8fafc; overflow: hidden; }
 
-        /* Navigation Header */
+        /* Top Bar */
         #top-bar {
             position: fixed; top: 0; left: 0; right: 0; height: 60px;
             background: #1e293b; border-bottom: 1px solid #334155;
@@ -19,6 +19,7 @@
         }
         .brand { font-size: 20px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
         .user-profile { display: flex; align-items: center; gap: 12px; }
+        .level-badge { background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 12px; }
         .avatar-btn {
             background: #334155; border: 1px solid #475569; color: #fff; padding: 6px 16px;
             border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s;
@@ -34,10 +35,10 @@
         /* HUD Bar */
         #hud {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; background: rgba(15, 23, 42, 0.9);
+            z-index: 1000; background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px 24px; border-radius: 16px; display: flex; align-items: center;
-            gap: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 440px;
+            gap: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); min-width: 440px;
         }
         .status-text { font-size: 14px; font-weight: 500; }
         .score-badge { background: #0284c7; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
@@ -59,68 +60,61 @@
 
         .modal {
             background: #1e293b; border: 1px solid #334155;
-            padding: 28px; border-radius: 24px; width: 90%; max-width: 540px;
+            padding: 24px; border-radius: 24px; width: 90%; max-width: 560px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-height: 90vh; overflow-y: auto;
         }
-        .modal h2 { margin-top: 0; font-size: 24px; color: #fff; }
+        .modal h2 { margin-top: 0; font-size: 22px; color: #fff; }
 
         /* Mode Selectors */
-        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
         .mode-card {
             background: #0f172a; border: 2px solid #334155; border-radius: 14px;
-            padding: 14px; cursor: pointer; text-align: center; transition: 0.2s;
+            padding: 12px; cursor: pointer; text-align: center; transition: 0.2s;
         }
         .mode-card.active { border-color: #38bdf8; background: #1e293b; }
-        .mode-card h3 { margin: 0 0 6px 0; font-size: 16px; color: #38bdf8; }
-        .mode-card p { margin: 0; font-size: 12px; color: #94a3b8; }
+        .mode-card h3 { margin: 0 0 4px 0; font-size: 15px; color: #38bdf8; }
+        .mode-card p { margin: 0; font-size: 11px; color: #94a3b8; }
 
-        .form-group { margin: 14px 0; text-align: left; }
-        .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+        .form-group { margin: 12px 0; text-align: left; }
+        .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
         .form-group select, .form-group input {
             width: 100%; padding: 10px; border-radius: 8px; background: #0f172a;
-            border: 1px solid #334155; color: #fff; font-size: 14px; outline: none;
+            border: 1px solid #334155; color: #fff; font-size: 13px; outline: none;
         }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
-        .stat-card { background: #0f172a; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        .stat-value { font-size: 20px; font-weight: 700; color: #38bdf8; }
-        .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin-top: 4px; }
-        
-        .mp-box { background: #0f172a; padding: 14px; border-radius: 12px; border: 1px dashed #475569; margin-top: 14px; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
+        .stat-card { background: #0f172a; padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        .stat-value { font-size: 18px; font-weight: 700; color: #38bdf8; }
+        .stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
 
-        /* Achievements Styling */
-        .achievements-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        /* Level Bar UI */
+        .level-progress-bg { background: #0f172a; border-radius: 10px; height: 12px; width: 100%; border: 1px solid #334155; overflow: hidden; margin-top: 6px; }
+        .level-progress-fill { background: linear-gradient(90deg, #0284c7, #38bdf8); height: 100%; width: 0%; transition: width 0.3s; }
+
+        /* Achievements */
+        .achievements-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
         .achieve-item {
-            background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 10px;
+            background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 10px;
             display: flex; align-items: center; gap: 10px; opacity: 0.35; filter: grayscale(1);
         }
         .achieve-item.unlocked { opacity: 1; filter: grayscale(0); border-color: #38bdf8; }
-        .achieve-icon { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
-        .achieve-title { font-size: 12px; font-weight: 700; color: #fff; }
-        .achieve-desc { font-size: 10px; color: #94a3b8; }
+        .achieve-icon { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+        .achieve-title { font-size: 11px; font-weight: 700; color: #fff; }
+        .achieve-desc { font-size: 9px; color: #94a3b8; }
 
-        .friends-list { max-height: 120px; overflow-y: auto; margin-top: 10px; }
-        .friend-chip {
-            background: #0f172a; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155;
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px;
-        }
+        /* Round Results Breakdown Table */
+        .rounds-breakdown { margin-top: 14px; text-align: left; background: #0f172a; border-radius: 12px; padding: 10px; border: 1px solid #334155; max-height: 140px; overflow-y: auto; }
+        .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; font-size: 12px; }
+        .breakdown-row:last-child { border-bottom: none; }
 
-        /* Mobile Adaptation CSS */
+        /* Mobile Adaptation */
         @media (max-width: 768px) {
-            #top-bar { padding: 0 14px; }
+            #top-bar { padding: 0 12px; }
             .brand { font-size: 16px; }
             #game { flex-direction: column; }
             .divider { width: 100%; height: 4px; }
-            #hud {
-                min-width: unset;
-                width: calc(100% - 24px);
-                bottom: 12px;
-                padding: 8px 14px;
-                gap: 8px;
-            }
-            .status-text { font-size: 12px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .score-badge, .timer-badge { font-size: 11px; padding: 2px 8px; }
-            .btn-primary { padding: 8px 12px; font-size: 12px; }
+            #hud { min-width: unset; width: calc(100% - 24px); bottom: 12px; padding: 8px 12px; gap: 8px; }
+            .status-text { font-size: 11px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .modal { width: 95%; padding: 16px; }
             .mode-selector, .stats-grid, .achievements-list { grid-template-columns: 1fr; }
         }
@@ -132,8 +126,9 @@
     <div id="top-bar">
         <div class="brand">World Tiles</div>
         <div class="user-profile">
-            <button id="profile-btn" class="avatar-btn"><span id="username-display">Guest</span></button>
-            <button id="menu-btn" class="btn-primary" style="padding: 6px 14px; font-size: 13px;">Main Menu</button>
+            <span id="level-badge-top" class="level-badge">Lvl 1</span>
+            <button id="profile-btn" class="avatar-btn"><span id="username-display">Player</span></button>
+            <button id="menu-btn" class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Main Menu</button>
         </div>
     </div>
 
@@ -154,7 +149,10 @@
     <!-- Menu / Lobby Modal -->
     <div id="lobby-modal" class="modal-overlay">
         <div class="modal">
-            <h2>Select Game Mode</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="margin:0;">Select Game Mode</h2>
+                <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
+            </div>
             
             <div class="mode-selector">
                 <div class="mode-card active" data-mode="tiles" onclick="selectGameMode('tiles')">
@@ -167,32 +165,30 @@
                 </div>
             </div>
 
-            <!-- Mode-specific Difficulty -->
             <div id="tiles-diff-group" class="form-group">
                 <label>Tile View Size:</label>
                 <select id="tiles-difficulty">
-                    <option value="easy">Easy</option>
+                    <option value="easy">Easy (Large Region)</option>
                     <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
+                    <option value="hard">Hard (Small Region)</option>
                 </select>
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
-                <label>City Population Range:</label>
+                <label>City Category:</label>
                 <select id="cities-difficulty">
-                    <option value="easy">Easy (3M+ Big cities)</option>
-                    <option value="medium" selected>Medium (1M - 3M Large Cities)</option>
-                    <option value="hard">Hard (100k - 1M Cities)</option>
+                    <option value="easy">Easy (&gt; 3M Population)</option>
+                    <option value="medium" selected>Medium (1M - 3M Population)</option>
+                    <option value="hard">Hard (100k - 1M Population)</option>
                     <option value="expert">Mega Hard (&lt; 100k Small Towns)</option>
                 </select>
             </div>
 
-            <!-- Rules -->
             <div class="form-group">
                 <label>Format:</label>
                 <select id="format-select" onchange="toggleFormatOptions()">
                     <option value="rounds" selected>Classic (No time limit)</option>
-                    <option value="timed_total">Time Attack (Total game time)</option>
+                    <option value="timed_total">Time Attack (Total time)</option>
                     <option value="timed_round">Blitz (Time per round)</option>
                 </select>
             </div>
@@ -224,24 +220,7 @@
                 </select>
             </div>
 
-            <!-- Multiplayer -->
-            <div class="form-group">
-                <label>Match Type:</label>
-                <select id="match-type" onchange="toggleMultiplayerUI()">
-                    <option value="single" selected>Singleplayer</option>
-                    <option value="multi">Multiplayer</option>
-                </select>
-            </div>
-
-            <div id="mp-box" class="mp-box" style="display: none;">
-                <p style="font-size: 12px; color: #94a3b8; margin: 0 0 10px 0;">Multiplayer Lobby Code:</p>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="room-code" placeholder="Enter Room Code..." style="text-align: center; font-weight: 700; text-transform: uppercase;">
-                    <button class="btn-primary" onclick="createRoom()">Create</button>
-                </div>
-            </div>
-
-            <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 16px;" disabled>Loading Points...</button>
+            <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;" disabled>Loading Points...</button>
         </div>
     </div>
 
@@ -249,9 +228,18 @@
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
             <h2>User Profile</h2>
-            <div style="background: #0f172a; padding: 10px 14px; border-radius: 10px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                <span style="font-size: 12px; color: #94a3b8;">Your User ID:</span>
-                <span id="user-id-display" style="font-weight: 700; color: #38bdf8; font-size: 14px;">#GEO-0000</span>
+            <div style="background: #0f172a; padding: 10px 14px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #94a3b8;">Your ID: <strong id="user-id-display" style="color: #38bdf8;">#GEO-0000</strong></span>
+                    <span id="user-level-display" style="font-weight: 700; color: #38bdf8; font-size: 13px;">Level 1</span>
+                </div>
+                <div class="level-progress-bg">
+                    <div id="xp-progress-fill" class="level-progress-fill"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 4px;">
+                    <span id="xp-text">0 / 1000 XP</span>
+                    <span>Total XP: <span id="total-xp-text">0</span></span>
+                </div>
             </div>
 
             <div class="form-group">
@@ -262,28 +250,30 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div id="user-games" class="stat-value">0</div>
-                    <div class="stat-label">Games Played</div>
+                    <div class="stat-label">Games</div>
                 </div>
                 <div class="stat-card">
                     <div id="user-highscore" class="stat-value">0</div>
                     <div class="stat-label">Highscore</div>
                 </div>
+                <div class="stat-card">
+                    <div id="user-perfects" class="stat-value">0</div>
+                    <div class="stat-label">Bullseyes</div>
+                </div>
             </div>
 
             <!-- Achievements -->
-            <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 10px;">Achievements:</label>
+            <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 8px;">Achievements:</label>
             <div id="achievements-container" class="achievements-list"></div>
 
-            <!-- Friends -->
-            <label style="font-size: 13px; color: #94a3b8; display: block; margin-top: 14px;">Friends List:</label>
-            <div style="display: flex; gap: 8px; margin-top: 6px;">
-                <input type="text" id="friend-id-input" placeholder="Enter Friend ID (#GEO-XXXX)..." style="font-size: 12px;">
-                <button class="btn-primary" onclick="addFriend()" style="padding: 6px 12px; font-size: 12px;">Add</button>
+            <!-- Data Backup Buttons -->
+            <div style="display: flex; gap: 8px; margin-top: 14px;">
+                <button class="btn-primary" onclick="exportData()" style="flex: 1; padding: 6px; font-size: 11px; background: #334155;">Export Backup</button>
+                <button class="btn-primary" onclick="importData()" style="flex: 1; padding: 6px; font-size: 11px; background: #334155;">Import Data</button>
             </div>
-            <div id="friends-container" class="friends-list"></div>
 
-            <div style="display: flex; gap: 10px; margin-top: 16px;">
-                <button class="btn-primary" onclick="saveProfile()" style="flex: 1;">Save Profile</button>
+            <div style="display: flex; gap: 10px; margin-top: 14px;">
+                <button class="btn-primary" onclick="saveProfile()" style="flex: 1;">Save</button>
                 <button class="btn-primary" onclick="closeProfile()" style="flex: 1; background: #475569;">Close</button>
             </div>
         </div>
@@ -292,13 +282,17 @@
     <!-- End Game Modal -->
     <div id="end-modal" class="modal-overlay" style="display: none;">
         <div class="modal" style="text-align: center;">
-            <h1>Game Over</h1>
-            <p id="end-rank" style="font-weight: 600; color: #38bdf8; font-size: 16px; margin-bottom: 8px;"></p>
+            <h1 style="margin-top:0;">Game Completed!</h1>
+            <p id="end-rank" style="font-weight: 600; color: #38bdf8; font-size: 15px; margin-bottom: 8px;"></p>
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div id="end-score" class="stat-value">0 pts</div>
+                    <div id="end-score" class="stat-value">0</div>
                     <div class="stat-label">Total Score</div>
+                </div>
+                <div class="stat-card">
+                    <div id="end-xp" class="stat-value">+0 XP</div>
+                    <div class="stat-label">XP Earned</div>
                 </div>
                 <div class="stat-card">
                     <div id="end-accuracy" class="stat-value">0%</div>
@@ -306,7 +300,9 @@
                 </div>
             </div>
 
-            <button onclick="openLobby()" class="btn-primary" style="width: 100%; padding: 12px;">Back to Menu</button>
+            <div class="rounds-breakdown" id="rounds-breakdown-list"></div>
+
+            <button onclick="openLobby()" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;">Back to Main Menu</button>
         </div>
     </div>
 
@@ -314,59 +310,52 @@
     const TILES_DIFF = { easy: { d: 1.2 }, medium: { d: 0.5 }, hard: { d: 0.2 } };
 
     const ACHIEVEMENTS = [
-        { 
-            id: 'first_game', 
-            title: 'First Steps', 
-            desc: 'Complete 1 game', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>`
-        },
-        { 
-            id: 'perfect_hit', 
-            title: 'Bullseye', 
-            desc: 'Get a 5,000 pts score', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>`
-        },
-        { 
-            id: 'blitz_master', 
-            title: 'Speed Demon', 
-            desc: 'Play in Blitz mode', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`
-        },
-        { 
-            id: 'town_explorer', 
-            title: 'Town Explorer', 
-            desc: 'Play in Mega Hard City mode', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>`
-        },
-        { 
-            id: 'high_scorer', 
-            title: 'Master Cartographer', 
-            desc: 'Score over 20,000 pts', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2zM18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`
-        },
-        { 
-            id: 'marathon', 
-            title: 'Marathoner', 
-            desc: 'Play a 15 rounds match', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
-        },
-        { 
-            id: 'veteran', 
-            title: 'Seasoned Traveler', 
-            desc: 'Complete 10 total games', 
-            icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
-        }
+        { id: 'first_game', title: 'First Steps', desc: 'Play 1 game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>` },
+        { id: 'perfect_hit', title: 'Bullseye', desc: 'Get 5,000 pts in a round', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>` },
+        { id: 'blitz_master', title: 'Speed Demon', desc: 'Play in Blitz mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>` },
+        { id: 'town_explorer', title: 'Town Explorer', desc: 'Play Mega Hard City mode', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>` },
+        { id: 'level_5', title: 'Expert Cartographer', desc: 'Reach Profile Level 5', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` },
+        { id: 'level_10', title: 'Master Geographer', desc: 'Reach Profile Level 10', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2zM18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>` },
+        { id: 'sniper', title: 'Sharpshooter', desc: 'Hit 3 perfect scores in a game', icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>` }
     ];
 
-    // User Profile 
-    let currentUser = JSON.parse(localStorage.getItem('geo_user_v2')) || {
+    // User Profile Initialization
+    let currentUser = JSON.parse(localStorage.getItem('geo_user_v3')) || {
         id: '#GEO-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
         name: 'Player' + Math.floor(1000 + Math.random() * 9000),
         gamesPlayed: 0,
         highScore: 0,
-        unlockedAchieve: [],
-        friends: []
+        perfectHits: 0,
+        xp: 0,
+        level: 1,
+        unlockedAchieve: []
     };
+
+    // XP & Level Logic (Progressive Curve)
+    function getXpRequiredForLevel(lvl) {
+        if (lvl <= 1) return 0;
+        return Math.floor(1200 * Math.pow(lvl - 1, 1.4));
+    }
+
+    function calculateLevel(xp) {
+        let lvl = 1;
+        while (xp >= getXpRequiredForLevel(lvl + 1)) {
+            lvl++;
+        }
+        return lvl;
+    }
+
+    function addXP(amount) {
+        currentUser.xp += Math.round(amount);
+        const newLevel = calculateLevel(currentUser.xp);
+        currentUser.level = newLevel;
+
+        if (newLevel >= 5) unlockAchievement('level_5');
+        if (newLevel >= 10) unlockAchievement('level_10');
+
+        localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
+        updateProfileUI();
+    }
 
     function updateProfileUI() {
         document.getElementById('username-display').textContent = currentUser.name;
@@ -374,8 +363,22 @@
         document.getElementById('user-id-display').textContent = currentUser.id;
         document.getElementById('user-games').textContent = currentUser.gamesPlayed;
         document.getElementById('user-highscore').textContent = currentUser.highScore;
+        document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
 
-        // Render Achievements with SVG Icons
+        const currentLvl = calculateLevel(currentUser.xp);
+        const currentLvlXP = getXpRequiredForLevel(currentLvl);
+        const nextLvlXP = getXpRequiredForLevel(currentLvl + 1);
+        const progressInLevel = currentUser.xp - currentLvlXP;
+        const totalNeeded = nextLvlXP - currentLvlXP;
+        const pct = Math.min(100, Math.max(0, (progressInLevel / totalNeeded) * 100));
+
+        document.getElementById('level-badge-top').textContent = `Lvl ${currentLvl}`;
+        document.getElementById('user-level-display').textContent = `Level ${currentLvl}`;
+        document.getElementById('xp-progress-fill').style.width = `${pct}%`;
+        document.getElementById('xp-text').textContent = `${progressInLevel} / ${totalNeeded} XP`;
+        document.getElementById('total-xp-text').textContent = currentUser.xp;
+
+        // Render Achievements
         const achContainer = document.getElementById('achievements-container');
         achContainer.innerHTML = '';
         ACHIEVEMENTS.forEach(a => {
@@ -389,53 +392,59 @@
                     </div>
                 </div>`;
         });
-
-        // Friends
-        const friendContainer = document.getElementById('friends-container');
-        friendContainer.innerHTML = '';
-        if (currentUser.friends.length === 0) {
-            friendContainer.innerHTML = '<div style="font-size:11px; color:#64748b; margin-top:6px;">No friends added yet.</div>';
-        } else {
-            currentUser.friends.forEach(fId => {
-                friendContainer.innerHTML += `<div class="friend-chip"><span>${fId}</span><span style="color:#10b981; font-size:10px;">● Online</span></div>`;
-            });
-        }
     }
 
     function unlockAchievement(id) {
         if (!currentUser.unlockedAchieve.includes(id)) {
             currentUser.unlockedAchieve.push(id);
-            localStorage.setItem('geo_user_v2', JSON.stringify(currentUser));
+            localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
         }
     }
 
     function saveProfile() {
         const inputName = document.getElementById('username-input').value.trim();
         if (inputName) currentUser.name = inputName;
-        localStorage.setItem('geo_user_v2', JSON.stringify(currentUser));
+        localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
         updateProfileUI();
         closeProfile();
     }
 
-    function addFriend() {
-        const fInput = document.getElementById('friend-id-input');
-        const fId = fInput.value.trim().toUpperCase();
-        if (fId && !currentUser.friends.includes(fId) && fId !== currentUser.id) {
-            currentUser.friends.push(fId);
-            localStorage.setItem('geo_user_v2', JSON.stringify(currentUser));
-            fInput.value = '';
-            updateProfileUI();
+    function exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentUser));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `world_tiles_profile_${currentUser.name}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importData() {
+        const jsonStr = prompt("Paste JSON string from your backup file:");
+        if (jsonStr) {
+            try {
+                const parsed = JSON.parse(jsonStr);
+                if (parsed && parsed.id) {
+                    currentUser = parsed;
+                    localStorage.setItem('geo_user_v3', JSON.stringify(currentUser));
+                    updateProfileUI();
+                    alert("Data imported successfully!");
+                }
+            } catch(e) {
+                alert("Error reading backup file.");
+            }
         }
     }
 
-    document.getElementById('profile-btn').addEventListener('click', () => {
+    function openProfileModal() {
         updateProfileUI();
         document.getElementById('profile-modal').style.display = 'flex';
-    });
+    }
+    document.getElementById('profile-btn').addEventListener('click', openProfileModal);
     function closeProfile() { document.getElementById('profile-modal').style.display = 'none'; }
 
-    // === Maps ===
-    const satMap = L.map('satellite', { zoomControl: true, attributionControl: false, maxBoundsViscosity: 1.0 }).setView([20, 0], 2);
+    // === Maps Initialization ===
+    const satMap = L.map('satellite', { zoomControl: true, attributionControl: false }).setView([20, 0], 2);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 17 }).addTo(satMap);
 
     const guessMap = L.map('guessmap', { maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 0.8 }).setView([20, 0], 2);
@@ -447,7 +456,29 @@
         iconSize: [16, 16], iconAnchor: [8, 8]
     });
 
-    // Variables
+    let satMaskLayer = null;
+
+    // Mask Satellite area outside bounds so map aspect ratio matches target exactly
+    function updateSatelliteMask(bounds) {
+        if (satMaskLayer) satMap.removeLayer(satMaskLayer);
+
+        const outerWorld = [[90, -180], [90, 180], [-90, 180], [-90, -180]];
+        const innerHole = [
+            [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
+            [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
+            [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
+            [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
+        ];
+
+        satMaskLayer = L.polygon([outerWorld, innerHole], {
+            color: '#000',
+            fillColor: '#0f172a',
+            fillOpacity: 0.85,
+            stroke: false
+        }).addTo(satMap);
+    }
+
+    // State Variables
     let allPoints = [], activePointsPool = [];
     let currentGameMode = 'tiles', formatMode = 'rounds';
     let timeRemaining = 0, timerInterval = null;
@@ -455,13 +486,14 @@
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
     let phase = 'guessing', gameHistory = [], summaryLayers = [];
+    let perfectHitsCountInGame = 0;
 
     const statusEl = document.getElementById('status');
     const scoreEl = document.getElementById('score');
     const timerEl = document.getElementById('timer');
     const btn = document.getElementById('btn');
 
-    // Load CSV Points
+    // Load CSV
     fetch('points.csv')
         .then(r => r.text())
         .then(text => {
@@ -503,17 +535,6 @@
         document.getElementById('timed-round-group').style.display = formatMode === 'timed_round' ? 'block' : 'none';
     }
 
-    function toggleMultiplayerUI() {
-        const type = document.getElementById('match-type').value;
-        document.getElementById('mp-box').style.display = type === 'multi' ? 'block' : 'none';
-    }
-
-    function createRoom() {
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-        document.getElementById('room-code').value = code;
-        alert(`Room created! Share code: ${code}`);
-    }
-
     function openLobby() {
         clearInterval(timerInterval);
         document.getElementById('end-modal').style.display = 'none';
@@ -539,7 +560,6 @@
         }
 
         totalRounds = parseInt(document.getElementById('rounds-select').value);
-        if (totalRounds === 15) unlockAchievement('marathon');
 
         if (formatMode === 'timed_total') {
             timeRemaining = parseInt(document.getElementById('timer-total-select').value);
@@ -553,7 +573,7 @@
         }
 
         document.getElementById('lobby-modal').style.display = 'none';
-        round = 0; totalScore = 0; gameHistory = [];
+        round = 0; totalScore = 0; perfectHitsCountInGame = 0; gameHistory = [];
         summaryLayers.forEach(l => guessMap.removeLayer(l));
         summaryLayers = [];
 
@@ -626,6 +646,7 @@
         satMap.setMinZoom(1);
         satMap.setMaxBounds(null);
         satMap.fitBounds(currentBounds);
+        updateSatelliteMask(currentBounds);
 
         setTimeout(() => {
             satMap.setMinZoom(satMap.getZoom());
@@ -678,7 +699,10 @@
 
         if (isInside) {
             roundScore = 5000;
+            perfectHitsCountInGame++;
+            currentUser.perfectHits = (currentUser.perfectHits || 0) + 1;
             unlockAchievement('perfect_hit');
+            if (perfectHitsCountInGame >= 3) unlockAchievement('sniper');
         } else {
             const centerLatLng = L.latLng([answer.lat, answer.lng]);
             const distMeters = centerLatLng.distanceTo(guessLatLng);
@@ -703,40 +727,40 @@
 
         scoreEl.textContent = `${totalScore.toLocaleString()} pts`;
         
-        const resultDetail = isInside ? `Perfect!` : `Off by ${distKm.toFixed(1)} km`;
-        if (currentGameMode === 'cities') {
-            const locationText = answer.name ? `${answer.name}, ${answer.country}` : `${answer.country}`;
-            statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
-        } else {
-            statusEl.textContent = `+${roundScore} pts (${resultDetail})`;
-        }
+        const resultDetail = isInside ? `Bullseye!` : `Off by ${distKm.toFixed(1)} km`;
+        const locationText = answer.name ? `${answer.name}, ${answer.country}` : `${answer.country}`;
+        statusEl.textContent = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
         btn.textContent = (formatMode !== 'timed_total' && round >= totalRounds) ? 'Finish Game' : 'Next Round';
         btn.disabled = false;
     }
 
-    // === End Game ===
+    // === End Game Modal & Stats ===
     function showEndGameModal() {
         clearInterval(timerInterval);
         phase = 'finished';
         btn.disabled = true;
-        btn.textContent = 'Game Over';
 
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
 
         currentUser.gamesPlayed++;
         unlockAchievement('first_game');
-        if (currentUser.gamesPlayed >= 10) unlockAchievement('veteran');
-        if (totalScore > 20000) unlockAchievement('high_scorer');
 
         if (totalScore > currentUser.highScore) currentUser.highScore = totalScore;
-        localStorage.setItem('geo_user_v2', JSON.stringify(currentUser));
+
+        // Calculate XP Earned
+        const earnedXP = Math.round((totalScore * 0.25) + (perfectHitsCountInGame * 250));
+        addXP(earnedXP);
 
         const allCoords = [];
+        const breakdownList = document.getElementById('rounds-breakdown-list');
+        breakdownList.innerHTML = '';
+
         gameHistory.forEach(h => {
             const centerCoords = [h.answer.lat, h.answer.lng];
 
+            // Numbered Guess Marker
             const gIcon = L.divIcon({
                 className: '',
                 html: `<div style="width:22px;height:22px;border-radius:50%;background:#0284c7;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.4);">${h.roundNum}</div>`,
@@ -749,8 +773,25 @@
                 weight: 2, fillColor: h.isInside ? '#10b981' : '#ef4444', fillOpacity: 0.25
             }).addTo(guessMap);
 
-            summaryLayers.push(mG, rect);
+            // Connect line from Marker to Center of Tile
+            const roundLine = L.polyline([h.guess, centerCoords], {
+                color: h.isInside ? '#10b981' : '#f59e0b',
+                weight: 2,
+                dashArray: '5,5'
+            }).addTo(guessMap);
+
+            roundLine.bindTooltip(`Round ${h.roundNum}: ${h.isInside ? 'Bullseye' : h.distKm.toFixed(1) + ' km'} (+${h.roundScore} pts)`);
+
+            summaryLayers.push(mG, rect, roundLine);
             allCoords.push(h.guess, centerCoords);
+
+            // Add row to modal breakdown
+            const locationText = h.answer.name ? `${h.answer.name} (${h.answer.country})` : h.answer.country;
+            breakdownList.innerHTML += `
+                <div class="breakdown-row">
+                    <span><strong>#${h.roundNum}</strong> ${locationText}</span>
+                    <span style="color: ${h.isInside ? '#10b981' : '#38bdf8'}; font-weight:700;">+${h.roundScore} pts (${h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km'})</span>
+                </div>`;
         });
 
         if (allCoords.length > 0) guessMap.fitBounds(L.latLngBounds(allCoords).pad(0.2));
@@ -758,15 +799,20 @@
         const maxScore = gameHistory.length * 5000;
         const accuracy = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
+        let rank = "Novice Explorer";
+        if (accuracy >= 90) rank = "Legendary Cartographer";
+        else if (accuracy >= 75) rank = "Senior Navigator";
+        else if (accuracy >= 50) rank = "Experienced Globe Trotter";
 
         document.getElementById('end-score').textContent = `${totalScore.toLocaleString()} pts`;
+        document.getElementById('end-xp').textContent = `+${earnedXP} XP`;
         document.getElementById('end-accuracy').textContent = `${accuracy}%`;
         document.getElementById('end-rank').textContent = rank;
 
         document.getElementById('end-modal').style.display = 'flex';
     }
 
-    // Mobile orientation
+    // Window Resize Handler
     window.addEventListener('resize', () => {
         satMap.invalidateSize();
         guessMap.invalidateSize();
