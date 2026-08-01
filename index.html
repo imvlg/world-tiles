@@ -212,15 +212,8 @@
                 </select>
                 </div>
 
-                <label style="margin-top:10px; display:block;">Continents:</label>
-                <div id="continent-checks" style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:12px;">
-                    <label><input type="checkbox" class="cont-chk" value="EU" checked> Europe</label>
-                    <label><input type="checkbox" class="cont-chk" value="AS" checked> Asia</label>
-                    <label><input type="checkbox" class="cont-chk" value="AF" checked> Africa</label>
-                    <label><input type="checkbox" class="cont-chk" value="NA" checked> North America</label>
-                    <label><input type="checkbox" class="cont-chk" value="SA" checked> South America</label>
-                    <label><input type="checkbox" class="cont-chk" value="OC" checked> Oceania</label>
-                </div>
+                <label style="margin-top:10px; display:block;">Region:</label>
+                <div id="continent-cards" style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;"></div>
 
                 <div id="cities-country-wrap">
                 <label style="margin-top:10px; display:block;">Limit to one country (optional):</label>
@@ -640,22 +633,35 @@
 
     const statusEl = document.getElementById('status'), scoreEl = document.getElementById('score'), btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer-display');
 
+    function splitCsvLine(line) {
+        const out = []; let cur = '', q = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (q && line[i + 1] === '"') { cur += '"'; i++; }
+                else q = !q;
+            } else if (ch === ',' && !q) { out.push(cur); cur = ''; }
+            else cur += ch;
+        }
+        out.push(cur);
+        return out;
+    }
+
     let capitalPoints = [];
     fetch('capitals.csv').then(r => r.ok ? r.text() : Promise.reject())
         .then(t => {
             const ls = t.trim().split('\n'); ls.shift();
             capitalPoints = ls.map(l => {
-                const c = splitCsvGlobal(l);
+                const c = splitCsvLine(l);
                 return { lng: parseFloat(c[0]), lat: parseFloat(c[1]), name: c[2], country: c[3], pop: parseInt(c[4]) || 0 };
             }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
             console.log('Capitals loaded:', capitalPoints.length);
         })
-        .catch(() => console.log('capitals.csv not found — Capitals mode disabled'));
+        .catch(e => console.log('capitals.csv problem:', e));
 
     fetch('points.csv').then(r => r.text()).then(text => {
         const lines = text.trim().split('\n');
         lines.shift();
-        window.splitCsvGlobal = splitCsv;
         function splitCsv(line) {
             const out = []; let cur = '', q = false;
             for (let i = 0; i < line.length; i++) {
@@ -746,8 +752,49 @@
         document.getElementById('tiles-diff-group').style.display = (mode === 'tiles') ? 'block' : 'none';
         document.getElementById('country-diff-group').style.display = (mode === 'country') ? 'block' : 'none';
         document.getElementById('cities-diff-group').style.display = mode === 'cities' ? 'block' : 'none';
-        setTimeout(() => { refreshCitiesUI(); refreshMultNote(); }, 0);
+        setTimeout(() => { refreshCitiesUI(); refreshMultNote(); renderRegionCards(); }, 0);
         document.getElementById('country-select-group').style.display = mode === 'country' ? 'block' : 'none';
+    }
+
+
+    const REGIONS = [
+        { code:'ALL', name:'World',   svg:'<svg viewBox="0 0 40 30" width="38" height="28"><circle cx="20" cy="15" r="12" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="20" cy="15" rx="5" ry="12" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="15" x2="32" y2="15" stroke="currentColor" stroke-width="1.5"/></svg>' },
+        { code:'EU',  name:'Europe',  svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M8,22 L10,14 L7,10 L14,6 L20,9 L26,5 L33,9 L31,15 L34,20 L27,24 L18,21 L12,25 Z" fill="currentColor"/></svg>' },
+        { code:'AS',  name:'Asia',    svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M5,12 L12,4 L24,3 L34,8 L36,16 L30,20 L32,26 L24,24 L18,27 L12,22 L6,20 Z" fill="currentColor"/></svg>' },
+        { code:'AF',  name:'Africa',  svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M13,3 L27,4 L29,11 L24,18 L22,27 L16,25 L14,17 L10,11 Z" fill="currentColor"/></svg>' },
+        { code:'NA',  name:'N. America', svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M4,7 L18,3 L33,6 L30,12 L24,14 L21,20 L17,27 L15,19 L10,15 L5,13 Z" fill="currentColor"/></svg>' },
+        { code:'SA',  name:'S. America', svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M16,3 L26,5 L27,13 L23,19 L21,27 L17,24 L15,16 L12,9 Z" fill="currentColor"/></svg>' },
+        { code:'OC',  name:'Oceania', svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M10,12 L24,9 L32,14 L28,21 L16,22 L9,18 Z" fill="currentColor"/><circle cx="34" cy="7" r="2.5" fill="currentColor"/><circle cx="6" cy="23" r="2" fill="currentColor"/></svg>' }
+    ];
+    let selectedRegions = ['ALL'];
+
+    function renderRegionCards() {
+        const box = document.getElementById('continent-cards');
+        if (!box) return;
+        box.innerHTML = '';
+        REGIONS.forEach(r => {
+            const on = selectedRegions.includes(r.code);
+            const d = document.createElement('div');
+            d.style.cssText = `background:${on ? '#1e293b' : '#0f172a'}; border:2px solid ${on ? '#38bdf8' : '#334155'};
+                border-radius:10px; padding:6px 2px; text-align:center; cursor:pointer;
+                color:${on ? '#38bdf8' : '#64748b'}; transition:0.15s;`;
+            d.innerHTML = `<div style="display:flex; justify-content:center;">${r.svg}</div>
+                <div style="font-size:10px; margin-top:2px; color:${on ? '#e2e8f0' : '#64748b'};">${r.name}</div>`;
+            d.onclick = () => {
+                if (r.code === 'ALL') { selectedRegions = ['ALL']; }
+                else {
+                    selectedRegions = selectedRegions.filter(c => c !== 'ALL');
+                    if (selectedRegions.includes(r.code)) selectedRegions = selectedRegions.filter(c => c !== r.code);
+                    else selectedRegions.push(r.code);
+                    if (selectedRegions.length === 0) selectedRegions = ['ALL'];
+                }
+                renderRegionCards();
+            };
+            box.appendChild(d);
+        });
+    }
+    function chosenContinents() {
+        return selectedRegions.includes('ALL') ? [] : selectedRegions.slice();
     }
 
     function refreshCitiesUI() {
@@ -797,12 +844,12 @@
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             const source = document.getElementById('cities-source').value;
-            const chosenConts = Array.from(document.querySelectorAll('.cont-chk:checked')).map(c => c.value);
+            const chosenConts = chosenContinents();
             const onlyCountry = (source === 'capitals') ? '' : document.getElementById('cities-country').value;
 
             if (source === 'capitals') {
                 let caps = capitalPoints.slice();
-                if (chosenConts.length > 0 && chosenConts.length < 6)
+                if (chosenConts.length > 0)
                     caps = caps.filter(p => chosenConts.includes(ISO_TO_CONTINENT[(p.country || '').toUpperCase()]));
                 pool = caps;
                 console.log('Capitals pool:', pool.length);
@@ -811,7 +858,7 @@
             let base = allPoints.filter(p => p.pop > 0);
             if (onlyCountry) {
                 base = base.filter(p => (p.country || '').toUpperCase() === onlyCountry);
-            } else if (chosenConts.length > 0 && chosenConts.length < 6) {
+            } else if (chosenConts.length > 0) {
                 base = base.filter(p => chosenConts.includes(ISO_TO_CONTINENT[(p.country || '').toUpperCase()]));
             }
 
@@ -828,7 +875,13 @@
             pool = Array.from(uniqueMap.values());
         }
 
-        if (pool.length === 0) pool = [...allPoints];
+        if (pool.length === 0) {
+            if (currentGameMode === 'cities' && document.getElementById('cities-source').value === 'capitals') {
+                alert('capitals.csv is missing or empty — cannot start Capitals mode.');
+                return;
+            }
+            pool = [...allPoints];
+        }
 
         // прибрати локації, що майже збігаються (райони одного міста)
         function dedupe(list, cellDeg) {
