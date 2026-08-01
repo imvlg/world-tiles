@@ -633,7 +633,8 @@
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
     document.getElementById('start-btn').addEventListener('click', () => {
-        const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+        const roomInput = document.getElementById('room-code');
+        const roomCode = roomInput ? roomInput.value.trim().toUpperCase() : '';
         activeRoomCode = roomCode;
         if (roomCode) {
             let seed = xmur3(roomCode);
