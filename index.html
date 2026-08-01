@@ -1062,12 +1062,22 @@
         } else {
             const centerLatLng = L.latLng([answer.lat, answer.lng]);
             distKm = centerLatLng.distanceTo(guessLatLng) / 1000;
-            // масштаб залежить від розміру знімка: half = відстань від центру до кута тайла
-            const halfKm = L.latLng(answer.lat, answer.lng)
-                .distanceTo(currentBounds.getNorthEast()) / 1000;
-            const over = Math.max(0, distKm - halfKm);
-            if (over > halfKm * 6) roundScore = 0;
-            else roundScore = Math.round(5000 * difficultyMultiplier() * Math.exp(-over / (halfKm * 1.4)));
+            // реальна відстань від кліку до МЕЖІ прямокутника (не до центру)
+            const halfLat = (currentBounds.getNorth() - currentBounds.getSouth()) / 2;
+            const halfLng = (currentBounds.getEast() - currentBounds.getWest()) / 2;
+            const kLat = 111.32;
+            const kLng = 111.32 * Math.cos(answer.lat * Math.PI / 180);
+
+            const dLatKm = Math.max(0, Math.abs(guessLatLng.lat - answer.lat) - halfLat) * kLat;
+            let dLngDeg = Math.abs(guessLatLng.lng - answer.lng);
+            if (dLngDeg > 180) dLngDeg = 360 - dLngDeg;
+            const dLngKm = Math.max(0, dLngDeg - halfLng) * kLng;
+
+            const over = Math.hypot(dLatKm, dLngKm);          // 0 на самій межі
+            const scaleKm = (halfLat * kLat + halfLng * kLng) / 2;   //половина розміру тайла
+
+            if (over > scaleKm * 6) roundScore = 0;
+            else roundScore = Math.round(5000 * difficultyMultiplier() * Math.exp(-over / (scaleKm * 1.4)));
             if (roundScore < 100) roundScore = 0;
         }
 
