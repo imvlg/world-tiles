@@ -250,8 +250,6 @@
                 </select>
             </div>
 
-            <div id="mult-note" style="font-size:11px; color:#38bdf8; margin-top:10px; text-align:center;"></div>
-
             <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;" disabled>Loading points...</button>
         </div>
     </div>
@@ -758,13 +756,20 @@
 
 
     const REGIONS = [
-        { code:'ALL', name:'World',   svg:'<svg viewBox="0 0 40 30" width="38" height="28"><circle cx="20" cy="15" r="12" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="20" cy="15" rx="5" ry="12" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="15" x2="32" y2="15" stroke="currentColor" stroke-width="1.5"/></svg>' },
-        { code:'EU',  name:'Europe',  svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M8,22 L10,14 L7,10 L14,6 L20,9 L26,5 L33,9 L31,15 L34,20 L27,24 L18,21 L12,25 Z" fill="currentColor"/></svg>' },
-        { code:'AS',  name:'Asia',    svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M5,12 L12,4 L24,3 L34,8 L36,16 L30,20 L32,26 L24,24 L18,27 L12,22 L6,20 Z" fill="currentColor"/></svg>' },
-        { code:'AF',  name:'Africa',  svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M13,3 L27,4 L29,11 L24,18 L22,27 L16,25 L14,17 L10,11 Z" fill="currentColor"/></svg>' },
-        { code:'NA',  name:'N. America', svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M4,7 L18,3 L33,6 L30,12 L24,14 L21,20 L17,27 L15,19 L10,15 L5,13 Z" fill="currentColor"/></svg>' },
-        { code:'SA',  name:'S. America', svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M16,3 L26,5 L27,13 L23,19 L21,27 L17,24 L15,16 L12,9 Z" fill="currentColor"/></svg>' },
-        { code:'OC',  name:'Oceania', svg:'<svg viewBox="0 0 40 30" width="38" height="28"><path d="M10,12 L24,9 L32,14 L28,21 L16,22 L9,18 Z" fill="currentColor"/><circle cx="34" cy="7" r="2.5" fill="currentColor"/><circle cx="6" cy="23" r="2" fill="currentColor"/></svg>' }
+        { code:'ALL', name:'World',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><circle cx="48" cy="40" r="30" fill="none" stroke="currentColor" stroke-width="3"/><ellipse cx="48" cy="40" rx="13" ry="30" fill="none" stroke="currentColor" stroke-width="2.5"/><line x1="18" y1="40" x2="78" y2="40" stroke="currentColor" stroke-width="2.5"/><path d="M28 22 Q48 30 68 22" fill="none" stroke="currentColor" stroke-width="2"/><path d="M28 58 Q48 50 68 58" fill="none" stroke="currentColor" stroke-width="2"/></svg>' },
+        { code:'EU',  name:'Europe',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><path d="M40 6 L50 4 L54 14 L64 8 L74 10 L84 18 L88 30 L78 36 L68 32 L72 44 L62 50 L54 42 L44 48 L38 60 L32 52 L36 42 L26 38 L18 30 L22 18 L32 14 Z" fill="currentColor"/><path d="M62 52 L66 66 L60 68 L58 56 Z" fill="currentColor"/></svg>' },
+        { code:'AS',  name:'Asia',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><path d="M12 22 L26 8 L48 4 L70 6 L86 14 L92 26 L84 34 L88 44 L76 46 L70 38 L64 48 L58 62 L52 50 L46 42 L34 46 L24 38 L14 32 Z" fill="currentColor"/><path d="M72 50 L78 62 L70 66 L68 54 Z" fill="currentColor"/></svg>' },
+        { code:'AF',  name:'Africa',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><path d="M26 8 L64 6 L74 14 L72 24 L82 30 L70 36 L64 32 L58 46 L52 62 L46 76 L40 60 L36 44 L28 32 L22 20 Z" fill="currentColor"/></svg>' },
+        { code:'NA',  name:'N. America',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><path d="M8 18 L20 6 L44 4 L72 8 L86 16 L78 26 L64 30 L58 40 L50 54 L44 70 L40 54 L34 42 L22 34 L12 28 Z" fill="currentColor"/></svg>' },
+        { code:'SA',  name:'S. America',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><path d="M32 6 L58 4 L70 14 L66 26 L58 34 L54 48 L48 62 L42 76 L38 60 L36 44 L28 30 L26 16 Z" fill="currentColor"/></svg>' },
+        { code:'OC',  name:'Oceania',
+          svg:'<svg viewBox="0 0 96 80" width="42" height="34"><path d="M20 30 L36 18 L58 16 L74 24 L78 38 L66 50 L46 54 L28 48 L18 40 Z" fill="currentColor"/><path d="M82 56 L88 62 L84 70 L78 64 Z" fill="currentColor"/><circle cx="14" cy="16" r="4" fill="currentColor"/><circle cx="86" cy="14" r="3" fill="currentColor"/></svg>' }
     ];
     let selectedRegions = ['ALL'];
 
@@ -812,9 +817,7 @@
     function refreshMultNote() {
         const el = document.getElementById('mult-note');
         if (!el) return;
-        const d = currentDifficulty();
-        const m = DIFF_MULT[d] || 1;
-        el.textContent = `Difficulty: ${d} — score multiplier ×${m}`;
+        return;
     }
     ['tiles-difficulty', 'cities-difficulty', 'country-difficulty', 'cities-source'].forEach(id => {
         const el = document.getElementById(id);
