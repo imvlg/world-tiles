@@ -196,13 +196,36 @@
             </div>
 
             <div id="cities-diff-group" class="form-group" style="display: none;">
-                <label>City Category:</label>
-                <select id="cities-difficulty">
-                    <option value="easy">Easy (5M+)</option>
-                    <option value="medium" selected>Medium (1M+)</option>
-                    <option value="hard">Hard (500K-1M)</option>
-                    <option value="expert">Expert (under 500K)</option>
+                <label>City type:</label>
+                <select id="cities-source">
+                    <option value="all" selected>All cities</option>
+                    <option value="capitals">Capitals only</option>
                 </select>
+
+                <div id="cities-size-wrap">
+                <label style="margin-top:10px; display:block;">City Size (relative to selection):</label>
+                <select id="cities-difficulty">
+                    <option value="easy">Easy (top 5% biggest)</option>
+                    <option value="medium" selected>Medium (top 20%)</option>
+                    <option value="hard">Hard (top 50%)</option>
+                    <option value="expert">Expert (all cities)</option>
+                </select>
+                </div>
+
+                <label style="margin-top:10px; display:block;">Continents:</label>
+                <div id="continent-checks" style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:12px;">
+                    <label><input type="checkbox" class="cont-chk" value="EU" checked> Europe</label>
+                    <label><input type="checkbox" class="cont-chk" value="AS" checked> Asia</label>
+                    <label><input type="checkbox" class="cont-chk" value="AF" checked> Africa</label>
+                    <label><input type="checkbox" class="cont-chk" value="NA" checked> North America</label>
+                    <label><input type="checkbox" class="cont-chk" value="SA" checked> South America</label>
+                    <label><input type="checkbox" class="cont-chk" value="OC" checked> Oceania</label>
+                </div>
+
+                <div id="cities-country-wrap">
+                <label style="margin-top:10px; display:block;">Limit to one country (optional):</label>
+                <select id="cities-country"><option value="">All countries</option></select>
+                </div>
             </div>
 
             <div style="display: flex; gap: 10px;">
@@ -234,6 +257,8 @@
                 </select>
             </div>
 
+            <div id="mult-note" style="font-size:11px; color:#38bdf8; margin-top:10px; text-align:center;"></div>
+
             <button id="start-btn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 14px;" disabled>Loading points...</button>
         </div>
     </div>
@@ -261,9 +286,7 @@
                 <div class="stat-card"><div id="user-games" class="stat-value">0</div><div class="stat-label">Games</div></div>
                 <div class="stat-card"><div id="user-highscore" class="stat-value">0</div><div class="stat-label">Highscore</div></div>
                 <div class="stat-card"><div id="user-perfects" class="stat-value">0</div><div class="stat-label">Bullseyes</div></div>
-                <div class="stat-card"><div id="user-rounds" class="stat-value">0</div><div class="stat-label">Rounds</div></div>
                 <div class="stat-card"><div id="user-countries" class="stat-value">0</div><div class="stat-label">Countries</div></div>
-                <div class="stat-card"><div id="user-continents" class="stat-value">0</div><div class="stat-label">Continents</div></div>
             </div>
 
             <div style="font-size:12px; color:#94a3b8; margin:10px 0 4px;">Best score per mode</div>
@@ -273,8 +296,10 @@
                 <div class="stat-card"><div id="best-country" class="stat-value">0</div><div class="stat-label">Country</div></div>
             </div>
 
-            <div id="continent-breakdown" style="font-size:11px; color:#64748b; margin-top:8px; line-height:1.7;"></div>
             <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 10px;">Achievements:</label>
+            <div style="font-size:12px; color:#94a3b8; margin:12px 0 6px;">Map pin — unlocks every 10 levels</div>
+            <div id="pin-list" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;"></div>
+
             <div id="achievements-list" class="achievements-box"></div>
             <button class="btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 12px;">Save Profile</button>
             <button class="btn-primary" onclick="closeProfile()" style="width: 100%; margin-top: 6px; background: #475569;">Close</button>
@@ -380,7 +405,18 @@
         return { name: 'Player' + Math.floor(1000+Math.random()*9000), gamesPlayed: 0, highScore: 0, perfectHits: 0, xp: 0, achievements: [] };
     }
     let currentUser = loadSavedUser();
-    function calculateLevel(xp) { return Math.floor((xp || 0) / 1000) + 1; }
+    function currentDifficulty() {
+        if (currentGameMode === 'country') return document.getElementById('country-difficulty').value;
+        if (currentGameMode === 'cities') {
+            if (document.getElementById('cities-source').value === 'capitals') return 'medium';
+            return document.getElementById('cities-difficulty').value;
+        }
+        return document.getElementById('tiles-difficulty').value;
+    }
+    const DIFF_MULT = { easy: 0.6, medium: 1.0, hard: 1.7, expert: 2.5 };
+    function difficultyMultiplier() { return DIFF_MULT[currentDifficulty()] || 1.0; }
+
+    function calculateLevel(xp) { return Math.floor(Math.sqrt((xp || 0) / 1500)) + 1; }
     function saveUserData() { localStorage.setItem('geo_user_v5', JSON.stringify(currentUser)); updateProfileUI(); }
     
     const ISO_TO_CONTINENT = {
@@ -457,33 +493,49 @@
 
     function updateProfileUI() {
         const lvl = calculateLevel(currentUser.xp);
-        const progress = (currentUser.xp || 0) % 1000;
+        const lvlNow = calculateLevel(currentUser.xp);
+        const xpForLvl = (n) => Math.pow(n - 1, 2) * 1500;
+        const curBase = xpForLvl(lvlNow), nextBase = xpForLvl(lvlNow + 1);
+        const progress = (currentUser.xp || 0) - curBase;
+        const need = nextBase - curBase;
         document.getElementById('level-badge-top').textContent = `Lvl ${lvl}`;
         document.getElementById('user-level-display').textContent = `Level ${lvl}`;
-        document.getElementById('xp-progress-fill').style.width = `${(progress/1000)*100}%`;
-        document.getElementById('xp-text').textContent = `${progress} / 1000 XP`;
+        document.getElementById('xp-progress-fill').style.width = `${(progress/need)*100}%`;
+        document.getElementById('xp-text').textContent = `${progress} / ${need} XP`;
         document.getElementById('total-xp-text').textContent = currentUser.xp || 0;
         document.getElementById('username-display').textContent = currentUser.name;
         document.getElementById('username-input').value = currentUser.name;
         document.getElementById('user-games').textContent = currentUser.gamesPlayed || 0;
         document.getElementById('user-highscore').textContent = currentUser.highScore || 0;
         document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
-        document.getElementById('user-rounds').textContent = currentUser.roundsPlayed || 0;
         document.getElementById('user-countries').textContent = (currentUser.countriesSeen || []).length;
 
         const cc2 = currentUser.continentCounts || {};
-        document.getElementById('user-continents').textContent = Object.keys(cc2).filter(k => cc2[k] > 0).length;
 
         const bm = currentUser.bestByMode || {};
         document.getElementById('best-tiles').textContent = (bm.tiles || 0).toLocaleString();
         document.getElementById('best-cities').textContent = (bm.cities || 0).toLocaleString();
         document.getElementById('best-country').textContent = (bm.country || 0).toLocaleString();
 
-        const cbEl = document.getElementById('continent-breakdown');
-        const parts = Object.keys(cc2).filter(k => cc2[k] > 0)
-            .sort((a, b) => cc2[b] - cc2[a])
-            .map(k => `${CONTINENT_NAMES[k] || k}: <strong style="color:#38bdf8">${cc2[k]}</strong>`);
-        cbEl.innerHTML = parts.length ? 'Locations by continent — ' + parts.join(' · ') : '';
+
+        const pinList = document.getElementById('pin-list');
+        if (pinList) {
+            pinList.innerHTML = '';
+            const activeId = activePin().id;
+            PINS.forEach(pin => {
+                const ok = pinUnlocked(pin);
+                const sel = ok && pin.id === activeId;
+                const d = document.createElement('div');
+                d.style.cssText = `background:#0f172a; border:2px solid ${sel ? '#38bdf8' : '#334155'};
+                    border-radius:10px; padding:8px 4px; text-align:center; cursor:${ok ? 'pointer' : 'default'};
+                    opacity:${ok ? 1 : 0.35};`;
+                d.innerHTML = `<div style="height:36px; display:flex; align-items:center; justify-content:center;">${pin.svg}</div>
+                    <div style="font-size:10px; color:${ok ? '#e2e8f0' : '#64748b'}; margin-top:4px;">${pin.name}</div>
+                    <div style="font-size:9px; color:#64748b;">${ok ? (sel ? 'active' : 'tap to use') : 'Lvl ' + pin.level}</div>`;
+                if (ok) d.onclick = () => { currentUser.pin = pin.id; saveUserData(); updateProfileUI(); };
+                pinList.appendChild(d);
+            });
+        }
 
         const achList = document.getElementById('achievements-list');
         achList.innerHTML = '';
@@ -517,10 +569,48 @@
     
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
 
-    const guessMap = L.map('guessmap', { maxBounds: [[-90, -180], [90, 180]], maxBoundsViscosity: 0.8 }).setView([20, 0], 2);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19, noWrap: true }).addTo(guessMap);
+    const guessMap = L.map('guessmap', {
+        worldCopyJump: true,
+        minZoom: 1,
+        maxBounds: [[-85, -Infinity], [85, Infinity]],
+        maxBoundsViscosity: 0.0
+    }).setView([20, 0], 2);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap', maxZoom: 19, noWrap: false
+    }).addTo(guessMap);
 
-    const guessIcon = L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#0284c7;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
+
+    const PINS = [
+        { id:'drop',      name:'Classic drop', level:1,  anchor:[16,32],
+          svg:'<svg width="32" height="32" viewBox="-28 -4 56 68"><path d="M0,60 C-22,30 -22,10 0,0 C22,10 22,30 0,60 Z" fill="#378ADD" stroke="#fff" stroke-width="4"/><circle cx="0" cy="20" r="8" fill="#fff"/></svg>' },
+        { id:'dot',       name:'Solid dot', level:10, anchor:[16,16],
+          svg:'<svg width="32" height="32" viewBox="-26 -26 52 52"><circle cx="0" cy="0" r="20" fill="#1D9E75" stroke="#fff" stroke-width="5"/></svg>' },
+        { id:'target',    name:'Target rings', level:20, anchor:[17,17],
+          svg:'<svg width="34" height="34" viewBox="-28 -28 56 56"><circle cx="0" cy="0" r="24" fill="none" stroke="#D85A30" stroke-width="5"/><circle cx="0" cy="0" r="13" fill="none" stroke="#D85A30" stroke-width="4"/><circle cx="0" cy="0" r="5" fill="#D85A30"/></svg>' },
+        { id:'flag',      name:'Flag', level:30, anchor:[6,32],
+          svg:'<svg width="34" height="32" viewBox="-6 0 40 62"><line x1="0" y1="4" x2="0" y2="58" stroke="#3d3d3a" stroke-width="5" stroke-linecap="round"/><path d="M0,6 L32,17 L0,29 Z" fill="#BA7517" stroke="#fff" stroke-width="2.5"/></svg>' },
+        { id:'star',      name:'Star', level:40, anchor:[17,17],
+          svg:'<svg width="34" height="34" viewBox="-32 -32 64 64"><path d="M0,-28 L7,-8 L28,-8 L11,5 L18,25 L0,13 L-18,25 L-11,5 L-28,-8 L-7,-8 Z" fill="#EF9F27" stroke="#fff" stroke-width="3"/></svg>' },
+        { id:'gem',       name:'Gem', level:50, anchor:[16,32],
+          svg:'<svg width="32" height="32" viewBox="-27 0 54 62"><path d="M0,2 L24,26 L0,58 L-24,26 Z" fill="#7F77DD" stroke="#fff" stroke-width="4"/><path d="M-24,26 L24,26" stroke="#fff" stroke-width="2.5"/></svg>' },
+        { id:'crosshair', name:'Crosshair', level:60, anchor:[18,18],
+          svg:'<svg width="36" height="36" viewBox="-32 -32 64 64"><circle cx="0" cy="0" r="21" fill="none" stroke="#E24B4A" stroke-width="4"/><line x1="0" y1="-30" x2="0" y2="-14" stroke="#E24B4A" stroke-width="4"/><line x1="0" y1="14" x2="0" y2="30" stroke="#E24B4A" stroke-width="4"/><line x1="-30" y1="0" x2="-14" y2="0" stroke="#E24B4A" stroke-width="4"/><line x1="14" y1="0" x2="30" y2="0" stroke="#E24B4A" stroke-width="4"/><circle cx="0" cy="0" r="4" fill="#E24B4A"/></svg>' },
+        { id:'plane',     name:'Paper plane', level:70, anchor:[17,17],
+          svg:'<svg width="34" height="34" viewBox="-30 -26 60 60"><path d="M-26,4 L28,-20 L4,24 L-2,8 Z" fill="#0F6E56" stroke="#fff" stroke-width="3"/><path d="M-2,8 L28,-20" stroke="#fff" stroke-width="2.5"/></svg>' },
+        { id:'crown',     name:'Crown', level:80, anchor:[17,26],
+          svg:'<svg width="34" height="34" viewBox="-28 4 56 54"><path d="M-24,50 L-24,20 L-12,32 L0,12 L12,32 L24,20 L24,50 Z" fill="#D4537E" stroke="#fff" stroke-width="3"/><circle cx="0" cy="12" r="4.5" fill="#fff"/></svg>' }
+    ];
+
+    function pinUnlocked(pin) { return calculateLevel(currentUser.xp) >= pin.level; }
+    function activePin() {
+        const id = currentUser.pin || 'drop';
+        const p = PINS.find(x => x.id === id && pinUnlocked(x));
+        return p || PINS[0];
+    }
+    function buildGuessIcon() {
+        const p = activePin();
+        return L.divIcon({ className: '', html: p.svg, iconSize: [34, 34], iconAnchor: p.anchor });
+    }
 
     let satMaskLayer = null;
     function updateSatelliteMask(bounds) {
@@ -550,9 +640,22 @@
 
     const statusEl = document.getElementById('status'), scoreEl = document.getElementById('score'), btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer-display');
 
+    let capitalPoints = [];
+    fetch('capitals.csv').then(r => r.ok ? r.text() : Promise.reject())
+        .then(t => {
+            const ls = t.trim().split('\n'); ls.shift();
+            capitalPoints = ls.map(l => {
+                const c = splitCsvGlobal(l);
+                return { lng: parseFloat(c[0]), lat: parseFloat(c[1]), name: c[2], country: c[3], pop: parseInt(c[4]) || 0 };
+            }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
+            console.log('Capitals loaded:', capitalPoints.length);
+        })
+        .catch(() => console.log('capitals.csv not found — Capitals mode disabled'));
+
     fetch('points.csv').then(r => r.text()).then(text => {
         const lines = text.trim().split('\n');
         lines.shift();
+        window.splitCsvGlobal = splitCsv;
         function splitCsv(line) {
             const out = []; let cur = '', q = false;
             for (let i = 0; i < line.length; i++) {
@@ -587,9 +690,26 @@
             cellSeen[p.country].add(k);
             countByCountry[p.country] = (countByCountry[p.country] || 0) + 1;
         });
+        const countryName = (code) => {
+            const c = (code || '').toUpperCase();
+            if (ISO_TO_COUNTRY[c]) return ISO_TO_COUNTRY[c];
+            try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(c) || c; }
+            catch (e) { return c; }
+        };
         const countries = Array.from(new Set(allPoints.map(p => p.country)))
-            .filter(c => c && countByCountry[c] >= MIN_LOCATIONS).sort();
+            .filter(c => c && countByCountry[c] >= MIN_LOCATIONS)
+            .sort((a, b) => countryName(a).localeCompare(countryName(b)));
         console.log('Countries available:', countries.length);
+        const citySel = document.getElementById('cities-country');
+        if (citySel) {
+            citySel.innerHTML = '<option value="">All countries</option>';
+            countries.forEach(c => {
+                const o = document.createElement('option');
+                o.value = c; o.textContent = countryName(c);
+                citySel.appendChild(o);
+            });
+        }
+
         const dropdownList = document.getElementById('country-dropdown-list');
         dropdownList.innerHTML = '';
         
@@ -626,8 +746,33 @@
         document.getElementById('tiles-diff-group').style.display = (mode === 'tiles') ? 'block' : 'none';
         document.getElementById('country-diff-group').style.display = (mode === 'country') ? 'block' : 'none';
         document.getElementById('cities-diff-group').style.display = mode === 'cities' ? 'block' : 'none';
+        setTimeout(() => { refreshCitiesUI(); refreshMultNote(); }, 0);
         document.getElementById('country-select-group').style.display = mode === 'country' ? 'block' : 'none';
     }
+
+    function refreshCitiesUI() {
+        const src = document.getElementById('cities-source');
+        if (!src) return;
+        const isCap = src.value === 'capitals';
+        document.getElementById('cities-size-wrap').style.display = isCap ? 'none' : 'block';
+        document.getElementById('cities-country-wrap').style.display = isCap ? 'none' : 'block';
+    }
+    (function () {
+        const el = document.getElementById('cities-source');
+        if (el) el.addEventListener('change', () => { refreshCitiesUI(); refreshMultNote(); });
+    })();
+
+    function refreshMultNote() {
+        const el = document.getElementById('mult-note');
+        if (!el) return;
+        const d = currentDifficulty();
+        const m = DIFF_MULT[d] || 1;
+        el.textContent = `Difficulty: ${d} — score multiplier ×${m}`;
+    }
+    ['tiles-difficulty', 'cities-difficulty', 'country-difficulty', 'cities-source'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', refreshMultNote);
+    });
 
     function openLobby() { document.getElementById('end-modal').style.display = 'none'; document.getElementById('lobby-modal').style.display = 'flex'; }
     document.getElementById('menu-btn').addEventListener('click', openLobby);
@@ -651,11 +796,32 @@
             pool = Array.from(uniqueMap.values());
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
-            if (diff === 'easy')        pool = allPoints.filter(p => p.pop >= 5000000);
-            else if (diff === 'medium') pool = allPoints.filter(p => p.pop >= 1000000);
-            else if (diff === 'hard')   pool = allPoints.filter(p => p.pop >= 500000 && p.pop < 1000000);
-            else                        pool = allPoints.filter(p => p.pop > 0 && p.pop < 500000);
-            console.log('City pool:', diff, pool.length);
+            const source = document.getElementById('cities-source').value;
+            const chosenConts = Array.from(document.querySelectorAll('.cont-chk:checked')).map(c => c.value);
+            const onlyCountry = (source === 'capitals') ? '' : document.getElementById('cities-country').value;
+
+            if (source === 'capitals') {
+                let caps = capitalPoints.slice();
+                if (chosenConts.length > 0 && chosenConts.length < 6)
+                    caps = caps.filter(p => chosenConts.includes(ISO_TO_CONTINENT[(p.country || '').toUpperCase()]));
+                pool = caps;
+                console.log('Capitals pool:', pool.length);
+            } else {
+
+            let base = allPoints.filter(p => p.pop > 0);
+            if (onlyCountry) {
+                base = base.filter(p => (p.country || '').toUpperCase() === onlyCountry);
+            } else if (chosenConts.length > 0 && chosenConts.length < 6) {
+                base = base.filter(p => chosenConts.includes(ISO_TO_CONTINENT[(p.country || '').toUpperCase()]));
+            }
+
+            // складність = ЧАСТКА від обраної вибірки, а не абсолютне населення
+            base.sort((a, b) => b.pop - a.pop);
+            const share = (diff === 'easy') ? 0.05 : (diff === 'medium') ? 0.20 : (diff === 'hard') ? 0.50 : 1.0;
+            const take = Math.max(20, Math.floor(base.length * share));
+            pool = base.slice(0, take);
+            console.log('City pool:', diff, 'of', base.length, '->', pool.length);
+            }
         } else {
             const uniqueMap = new Map();
             allPoints.forEach(p => uniqueMap.set(`${p.lat},${p.lng}`, p));
@@ -811,7 +977,7 @@
         const wrapped = e.latlng.wrap();
         guess = [wrapped.lat, wrapped.lng];
         if (guessMarker) guessMap.removeLayer(guessMarker);
-        guessMarker = L.marker(guess, { icon: guessIcon }).addTo(guessMap);
+        guessMarker = L.marker(guess, { icon: buildGuessIcon() }).addTo(guessMap);
         btn.disabled = false;
     });
 
@@ -827,7 +993,7 @@
         if (timerMode === 'round' && timerInterval) clearInterval(timerInterval);
         if (!guess) return;
 
-        const guessLatLng = L.latLng(guess);
+        const guessLatLng = L.latLng(guess[0], ((guess[1] + 540) % 360) - 180);
         const isInside = timedOut ? false : currentBounds.contains(guessLatLng);
         let roundScore = 0, distKm = 0;
 
@@ -835,12 +1001,18 @@
             roundScore = 0;
             distKm = 0;
         } else if (isInside) {
-            roundScore = 5000;
+            roundScore = Math.round(5000 * difficultyMultiplier());
             currentUser.perfectHits = (currentUser.perfectHits || 0) + 1;
         } else {
             const centerLatLng = L.latLng([answer.lat, answer.lng]);
             distKm = centerLatLng.distanceTo(guessLatLng) / 1000;
-            roundScore = Math.max(0, Math.round(5000 * Math.exp(-distKm / 1500)));
+            // масштаб залежить від розміру знімка: half = відстань від центру до кута тайла
+            const halfKm = L.latLng(answer.lat, answer.lng)
+                .distanceTo(currentBounds.getNorthEast()) / 1000;
+            const over = distKm - halfKm;
+            if (over > halfKm * 6) roundScore = 0;
+            else roundScore = Math.round(5000 * difficultyMultiplier() * Math.exp(-over / (halfKm * 1.4)));
+            if (roundScore < 100) roundScore = 0;
         }
 
         totalScore += roundScore;
@@ -873,8 +1045,8 @@
         const countryHtml = getCountryHTML(answer.country);
         const resultDetail = timedOut ? `Time up` : (isInside ? `Bullseye!` : `${distKm.toFixed(1)} km away`);
         let locationText = '';
-        if (currentGameMode === 'cities') locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
-        else if (currentGameMode === 'tiles') locationText = countryHtml;
+        if (currentGameMode === 'cities')
+            locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
         statusEl.innerHTML = locationText
             ? `+${roundScore} pts (${resultDetail}) — ${locationText}`
             : `+${roundScore} pts (${resultDetail})`;
@@ -907,7 +1079,7 @@
             : (currentGameMode === 'tiles' ? document.getElementById('tiles-difficulty').value
                                            : document.getElementById('cities-difficulty').value);
         if (diffNow === 'expert') currentUser.finishedExpert = true;
-        const earnedXP = Math.round(totalScore * 0.2);
+        const earnedXP = Math.round(totalScore * 0.05);
         currentUser.xp = (currentUser.xp || 0) + earnedXP;
         checkAchievements();
 
@@ -919,7 +1091,8 @@
             if (h.isInside) bullseyesCount++;
             const countryHtml = getCountryHTML(h.answer.country);
             let locationText = '';
-            if (currentGameMode === 'cities') locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
+            if (currentGameMode === 'cities')
+                locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
             else if (currentGameMode === 'tiles') locationText = countryHtml;
             breakdownList.innerHTML += `<div class="breakdown-row">
                 <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
