@@ -421,7 +421,8 @@
     const satMap = L.map('satellite', { 
         zoomControl: true, 
         attributionControl: false, 
-        maxBoundsViscosity: 1.0
+        maxBoundsViscosity: 1.0,
+        renderer: L.svg({ padding: 3 })
     }).setView([20, 0], 2);
     
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 }).addTo(satMap);
@@ -434,16 +435,20 @@
     let satMaskLayer = null;
     function updateSatelliteMask(bounds) {
         if (satMaskLayer) satMap.removeLayer(satMaskLayer);
-        const giantWorld = [[85, -720], [85, 720], [-85, 720], [-85, -720]];
         const n = bounds.getNorth(), s2 = bounds.getSouth(), w = bounds.getWest(), e = bounds.getEast();
         const padLat = (n - s2) * 0.02, padLng = (e - w) * 0.02;
-        const innerHole = [
-            [n - padLat, w + padLng],
-            [s2 + padLat, w + padLng],
-            [s2 + padLat, e - padLng],
-            [n - padLat, e - padLng]
+        const N = Math.min(n - padLat, 85), S = Math.max(s2 + padLat, -85);
+        const W = w + padLng, E = e - padLng;
+        const OUT = 40;   // наскільки далеко тінь тягнеться назовні
+        const sides = [
+            [[Math.min(N + OUT, 85), W - OUT], [N, E + OUT]],
+            [[S, W - OUT], [Math.max(S - OUT, -85), E + OUT]],
+            [[Math.min(N + OUT, 85), W - OUT], [Math.max(S - OUT, -85), W]],
+            [[Math.min(N + OUT, 85), E], [Math.max(S - OUT, -85), E + OUT]]
         ];
-        satMaskLayer = L.polygon([giantWorld, innerHole], { color: '#000', fillColor: '#0f172a', fillOpacity: 1, stroke: false, interactive: false }).addTo(satMap);
+        satMaskLayer = L.layerGroup(
+            sides.map(b => L.rectangle(b, { fillColor: '#0f172a', fillOpacity: 1, stroke: false, interactive: false }))
+        ).addTo(satMap);
     }
 
     let allPoints = [], activePool = [];
@@ -747,10 +752,12 @@
         scoreEl.textContent = `You: ${totalScore.toLocaleString()} pts`;
         
         const countryHtml = getCountryHTML(answer.country);
-        const showName = (currentGameMode === 'cities');
-        const locationText = (showName && answer.name) ? `${answer.name}, ${countryHtml}` : countryHtml;
         const resultDetail = timedOut ? `Time up` : (isInside ? `Bullseye!` : `${distKm.toFixed(1)} km away`);
-        statusEl.innerHTML = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
+        let locationText = '';
+        if (currentGameMode === 'cities') locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
+        statusEl.innerHTML = locationText
+            ? `+${roundScore} pts (${resultDetail}) — ${locationText}`
+            : `+${roundScore} pts (${resultDetail})`;
 
         phase = 'revealed';
         
@@ -776,7 +783,8 @@
         gameHistory.forEach(h => {
             if (h.isInside) bullseyesCount++;
             const countryHtml = getCountryHTML(h.answer.country);
-            const locationText = (currentGameMode === 'cities' && h.answer.name) ? `${h.answer.name} (${countryHtml})` : countryHtml;
+            let locationText = '';
+            if (currentGameMode === 'cities') locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
             breakdownList.innerHTML += `<div class="breakdown-row">
                 <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
                 <span style="color: ${h.timedOut ? '#94a3b8' : (h.isInside ? '#10b981' : '#38bdf8')}; font-weight:700;">+${h.roundScore} pts (${h.timedOut ? 'Time up' : (h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km')})</span>
