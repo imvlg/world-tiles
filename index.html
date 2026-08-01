@@ -185,6 +185,16 @@
                 </select>
             </div>
 
+            <div id="country-diff-group" class="form-group" style="display: none;">
+                <label>Tile Size (relative to country):</label>
+                <select id="country-difficulty">
+                    <option value="easy" selected>Easy (~10% of country)</option>
+                    <option value="medium">Medium (~4% of country)</option>
+                    <option value="hard">Hard (~1.5% of country)</option>
+                    <option value="expert">Expert (~0.7% of country)</option>
+                </select>
+            </div>
+
             <div id="cities-diff-group" class="form-group" style="display: none;">
                 <label>City Category:</label>
                 <select id="cities-difficulty">
@@ -424,14 +434,16 @@
     let satMaskLayer = null;
     function updateSatelliteMask(bounds) {
         if (satMaskLayer) satMap.removeLayer(satMaskLayer);
-        const giantWorld = [[180, -360], [180, 360], [-180, 360], [-180, -360]];
+        const giantWorld = [[85, -720], [85, 720], [-85, 720], [-85, -720]];
+        const n = bounds.getNorth(), s2 = bounds.getSouth(), w = bounds.getWest(), e = bounds.getEast();
+        const padLat = (n - s2) * 0.02, padLng = (e - w) * 0.02;
         const innerHole = [
-            [bounds.getNorthWest().lat, bounds.getNorthWest().lng],
-            [bounds.getSouthWest().lat, bounds.getSouthWest().lng],
-            [bounds.getSouthEast().lat, bounds.getSouthEast().lng],
-            [bounds.getNorthEast().lat, bounds.getNorthEast().lng]
+            [n - padLat, w + padLng],
+            [s2 + padLat, w + padLng],
+            [s2 + padLat, e - padLng],
+            [n - padLat, e - padLng]
         ];
-        satMaskLayer = L.polygon([giantWorld, innerHole], { color: '#000', fillColor: '#0f172a', fillOpacity: 0.95, stroke: false }).addTo(satMap);
+        satMaskLayer = L.polygon([giantWorld, innerHole], { color: '#000', fillColor: '#0f172a', fillOpacity: 1, stroke: false, interactive: false }).addTo(satMap);
     }
 
     let allPoints = [], activePool = [];
@@ -439,15 +451,29 @@
     let totalRounds = 5, round = 0, totalScore = 0;
     let answer = null, guess = null, currentBounds = null;
     let guessMarker = null, targetRect = null, line = null;
-    let phase = 'guessing', gameHistory = [], timerInterval = null, timerLeft = 0, timerMode = 'round';
+    let phase = 'guessing', gameHistory = [], timerInterval = null, timerLeft = 0, timerMode = 'round', timedOut = false;
 
     const statusEl = document.getElementById('status'), scoreEl = document.getElementById('score'), btn = document.getElementById('btn'), timerDisplay = document.getElementById('timer-display');
 
     fetch('points.csv').then(r => r.text()).then(text => {
         const lines = text.trim().split('\n');
         lines.shift();
+        function splitCsv(line) {
+            const out = []; let cur = '', q = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    if (q && line[i + 1] === '"') { cur += '"'; i++; }
+                    else q = !q;
+                } else if (ch === ',' && !q) { out.push(cur); cur = ''; }
+                else cur += ch;
+            }
+            out.push(cur);
+            return out;
+        }
+
         allPoints = lines.map(line => {
-            const p = line.split(',');
+            const p = splitCsv(line);
             return {
                 lng: parseFloat(p[0]), lat: parseFloat(p[1]),
                 name: p[2] ? p[2].trim() : '', country: p[3] ? p[3].trim() : '', pop: p[4] ? parseInt(p[4]) : 0
@@ -488,7 +514,8 @@
         currentGameMode = mode;
         document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
         document.querySelector(`.mode-card[data-mode="${mode}"]`).classList.add('active');
-        document.getElementById('tiles-diff-group').style.display = (mode === 'tiles' || mode === 'country') ? 'block' : 'none';
+        document.getElementById('tiles-diff-group').style.display = (mode === 'tiles') ? 'block' : 'none';
+        document.getElementById('country-diff-group').style.display = (mode === 'country') ? 'block' : 'none';
         document.getElementById('cities-diff-group').style.display = mode === 'cities' ? 'block' : 'none';
         document.getElementById('country-select-group').style.display = mode === 'country' ? 'block' : 'none';
     }
@@ -525,6 +552,31 @@
         }
 
         if (pool.length === 0) pool = [...allPoints];
+
+        // прибрати локації, що майже збігаються (райони одного міста)
+        function dedupe(list, cellDeg) {
+            const seen = new Set(), out = [];
+            for (const pt of list) {
+                const k = Math.round(pt.lat / cellDeg) + '_' + Math.round(pt.lng / cellDeg);
+                if (seen.has(k)) continue;
+                seen.add(k); out.push(pt);
+            }
+            return out;
+        }
+        let cell = 0.5;
+        if (currentGameMode === 'country') {
+            const cd2 = document.getElementById('country-difficulty').value;
+            cell = (cd2 === 'easy') ? 1.0 : (cd2 === 'medium') ? 0.4 : (cd2 === 'hard') ? 0.15 : 0.06;
+        } else if (currentGameMode === 'tiles') {
+            const td2 = document.getElementById('tiles-difficulty').value;
+            cell = (td2 === 'easy') ? 8 : (td2 === 'medium') ? 3 : (td2 === 'hard') ? 1 : 0.3;
+        } else {
+            cell = 0.2;
+        }
+        const deduped = dedupe(shuffle([...pool]), cell);
+        if (deduped.length >= 5) pool = deduped;
+        console.log('Pool after dedupe:', pool.length, 'cell', cell);
+
         activePool = shuffle([...pool]);
         
         totalRounds = parseInt(document.getElementById('rounds-select').value);
@@ -563,6 +615,7 @@
         if (timerInterval && timerMode === 'round') clearInterval(timerInterval);
         [guessMarker, targetRect, line].forEach(l => l && guessMap.removeLayer(l));
         guessMarker = targetRect = line = guess = null;
+        timedOut = false;
         phase = 'guessing';
 
         if (activePool.length === 0) activePool = shuffle([...allPoints]);
@@ -577,7 +630,7 @@
             const lngSpan = Math.max(...lngs) - Math.min(...lngs);
             const S = Math.max(Math.min(latSpan, lngSpan), 0.05);
 
-            const cd = document.getElementById('tiles-difficulty').value;
+            const cd = document.getElementById('country-difficulty').value;
             let pct, maxD, minD;
             if (cd === 'easy')        { pct = 0.10;  maxD = 0.5;  minD = 0.015; }
             else if (cd === 'medium') { pct = 0.04;  maxD = 0.2;  minD = 0.008; }
@@ -630,7 +683,7 @@
                     timerDisplay.textContent = `${timerLeft}s`;
                     if (timerLeft <= 0) {
                         if (timerMode === 'round') clearInterval(timerInterval);
-                        if (!guess) guess = [0, 0];
+                        if (!guess) { timedOut = true; guess = [answer.lat, answer.lng]; }
                         processGuess();
                     }
                 }, 1000);
@@ -662,10 +715,13 @@
         if (!guess) return;
 
         const guessLatLng = L.latLng(guess);
-        const isInside = currentBounds.contains(guessLatLng);
+        const isInside = timedOut ? false : currentBounds.contains(guessLatLng);
         let roundScore = 0, distKm = 0;
 
-        if (isInside) {
+        if (timedOut) {
+            roundScore = 0;
+            distKm = 0;
+        } else if (isInside) {
             roundScore = 5000;
             currentUser.perfectHits = (currentUser.perfectHits || 0) + 1;
         } else {
@@ -675,11 +731,13 @@
         }
 
         totalScore += roundScore;
-        gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore });
+        gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore, timedOut });
 
         targetRect = L.rectangle(currentBounds, { color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.3 }).addTo(guessMap);
         const center = [answer.lat, answer.lng];
-        if (!isInside) {
+        if (timedOut) {
+            guessMap.fitBounds(currentBounds.pad(0.5), { maxZoom: 10 });
+        } else if (!isInside) {
             line = L.polyline([guess, center], { color: '#38bdf8', weight: 2, dashArray: '5,5' }).addTo(guessMap);
             guessMap.fitBounds(L.latLngBounds([guess, center]).pad(0.6), { maxZoom: 10 });
         } else {
@@ -689,8 +747,9 @@
         scoreEl.textContent = `You: ${totalScore.toLocaleString()} pts`;
         
         const countryHtml = getCountryHTML(answer.country);
-        const resultDetail = isInside ? `Bullseye!` : `${distKm.toFixed(1)} km away`;
-        const locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
+        const showName = (currentGameMode === 'cities');
+        const locationText = (showName && answer.name) ? `${answer.name}, ${countryHtml}` : countryHtml;
+        const resultDetail = timedOut ? `Time up` : (isInside ? `Bullseye!` : `${distKm.toFixed(1)} km away`);
         statusEl.innerHTML = `+${roundScore} pts (${resultDetail}) — ${locationText}`;
 
         phase = 'revealed';
@@ -717,10 +776,10 @@
         gameHistory.forEach(h => {
             if (h.isInside) bullseyesCount++;
             const countryHtml = getCountryHTML(h.answer.country);
-            const locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
+            const locationText = (currentGameMode === 'cities' && h.answer.name) ? `${h.answer.name} (${countryHtml})` : countryHtml;
             breakdownList.innerHTML += `<div class="breakdown-row">
                 <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
-                <span style="color: ${h.isInside ? '#10b981' : '#38bdf8'}; font-weight:700;">+${h.roundScore} pts (${h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km'})</span>
+                <span style="color: ${h.timedOut ? '#94a3b8' : (h.isInside ? '#10b981' : '#38bdf8')}; font-weight:700;">+${h.roundScore} pts (${h.timedOut ? 'Time up' : (h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km')})</span>
             </div>`;
         });
 
