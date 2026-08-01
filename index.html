@@ -1065,7 +1065,7 @@
             // масштаб залежить від розміру знімка: half = відстань від центру до кута тайла
             const halfKm = L.latLng(answer.lat, answer.lng)
                 .distanceTo(currentBounds.getNorthEast()) / 1000;
-            const over = distKm - halfKm;
+            const over = Math.max(0, distKm - halfKm);
             if (over > halfKm * 6) roundScore = 0;
             else roundScore = Math.round(5000 * difficultyMultiplier() * Math.exp(-over / (halfKm * 1.4)));
             if (roundScore < 100) roundScore = 0;
