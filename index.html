@@ -236,8 +236,16 @@
             
             <div class="multiplayer-box">
                 <div class="form-group" style="margin: 0;">
-                    <label style="color: #38bdf8;">Multiplayer Room (Seed):</label>
-                    <input type="text" id="room-code" placeholder="Enter Room Code to play with friends (Leave blank for Solo)">
+                    <label style="color: #38bdf8;">Multiplayer Room Code</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="room-code" placeholder="Leave blank for solo play">
+                        <button type="button" onclick="generateRoomCode()" class="avatar-btn" style="white-space:nowrap;">Generate</button>
+                    </div>
+                    <div style="font-size:10px; color:#64748b; margin-top:6px; line-height:1.5;">
+                        Generate a code and share it with friends. Everyone who enters the same code
+                        <strong>with identical mode, difficulty and rounds</strong> gets the exact same locations.
+                        Compare final scores to see who wins.
+                    </div>
                 </div>
             </div>
 
@@ -268,7 +276,19 @@
                 <div class="stat-card"><div id="user-games" class="stat-value">0</div><div class="stat-label">Games</div></div>
                 <div class="stat-card"><div id="user-highscore" class="stat-value">0</div><div class="stat-label">Highscore</div></div>
                 <div class="stat-card"><div id="user-perfects" class="stat-value">0</div><div class="stat-label">Bullseyes</div></div>
+                <div class="stat-card"><div id="user-rounds" class="stat-value">0</div><div class="stat-label">Rounds</div></div>
+                <div class="stat-card"><div id="user-countries" class="stat-value">0</div><div class="stat-label">Countries</div></div>
+                <div class="stat-card"><div id="user-continents" class="stat-value">0</div><div class="stat-label">Continents</div></div>
             </div>
+
+            <div style="font-size:12px; color:#94a3b8; margin:10px 0 4px;">Best score per mode</div>
+            <div class="stats-grid">
+                <div class="stat-card"><div id="best-tiles" class="stat-value">0</div><div class="stat-label">World Tiles</div></div>
+                <div class="stat-card"><div id="best-cities" class="stat-value">0</div><div class="stat-label">Cities</div></div>
+                <div class="stat-card"><div id="best-country" class="stat-value">0</div><div class="stat-label">Country</div></div>
+            </div>
+
+            <div id="continent-breakdown" style="font-size:11px; color:#64748b; margin-top:8px; line-height:1.7;"></div>
             <label style="font-size: 12px; color: #94a3b8; display: block; margin-top: 10px;">Achievements:</label>
             <div id="achievements-list" class="achievements-box"></div>
             <button class="btn-primary" onclick="saveProfile()" style="width: 100%; margin-top: 12px;">Save Profile</button>
@@ -348,6 +368,14 @@
         }
     }
     let myRNG = Math.random;
+    let activeRoomCode = '';
+
+    function generateRoomCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        document.getElementById('room-code').value = code;
+    }
 
     function shuffle(array) {
         let m = array.length, t, i;
@@ -370,17 +398,75 @@
     function calculateLevel(xp) { return Math.floor((xp || 0) / 1000) + 1; }
     function saveUserData() { localStorage.setItem('geo_user_v5', JSON.stringify(currentUser)); updateProfileUI(); }
     
+    const ISO_TO_CONTINENT = {
+        DZ:'AF',AO:'AF',BJ:'AF',BW:'AF',BF:'AF',BI:'AF',CM:'AF',CV:'AF',CF:'AF',TD:'AF',KM:'AF',CD:'AF',CG:'AF',CI:'AF',DJ:'AF',EG:'AF',GQ:'AF',ER:'AF',ET:'AF',GA:'AF',GM:'AF',GH:'AF',GN:'AF',GW:'AF',KE:'AF',LS:'AF',LR:'AF',LY:'AF',MG:'AF',MW:'AF',ML:'AF',MR:'AF',MU:'AF',MA:'AF',MZ:'AF',NA:'AF',NE:'AF',NG:'AF',RW:'AF',ST:'AF',SN:'AF',SC:'AF',SL:'AF',SO:'AF',ZA:'AF',SS:'AF',SD:'AF',SZ:'AF',TZ:'AF',TG:'AF',TN:'AF',UG:'AF',ZM:'AF',ZW:'AF',EH:'AF',
+        AF:'AS',AM:'AS',AZ:'AS',BH:'AS',BD:'AS',BT:'AS',BN:'AS',KH:'AS',CN:'AS',CY:'AS',GE:'AS',IN:'AS',ID:'AS',IR:'AS',IQ:'AS',IL:'AS',JP:'AS',JO:'AS',KZ:'AS',KW:'AS',KG:'AS',LA:'AS',LB:'AS',MY:'AS',MV:'AS',MN:'AS',MM:'AS',NP:'AS',KP:'AS',OM:'AS',PK:'AS',PS:'AS',PH:'AS',QA:'AS',SA:'AS',SG:'AS',KR:'AS',LK:'AS',SY:'AS',TW:'AS',TJ:'AS',TH:'AS',TL:'AS',TR:'AS',TM:'AS',AE:'AS',UZ:'AS',VN:'AS',YE:'AS',HK:'AS',MO:'AS',
+        AL:'EU',AD:'EU',AT:'EU',BY:'EU',BE:'EU',BA:'EU',BG:'EU',HR:'EU',CZ:'EU',DK:'EU',EE:'EU',FI:'EU',FR:'EU',DE:'EU',GR:'EU',HU:'EU',IS:'EU',IE:'EU',IT:'EU',XK:'EU',LV:'EU',LI:'EU',LT:'EU',LU:'EU',MT:'EU',MD:'EU',MC:'EU',ME:'EU',NL:'EU',MK:'EU',NO:'EU',PL:'EU',PT:'EU',RO:'EU',RU:'EU',SM:'EU',RS:'EU',SK:'EU',SI:'EU',ES:'EU',SE:'EU',CH:'EU',UA:'EU',GB:'EU',VA:'EU',GI:'EU',FO:'EU',JE:'EU',IM:'EU',GG:'EU',
+        AG:'NA',BS:'NA',BB:'NA',BZ:'NA',CA:'NA',CR:'NA',CU:'NA',DM:'NA',DO:'NA',SV:'NA',GD:'NA',GT:'NA',HT:'NA',HN:'NA',JM:'NA',MX:'NA',NI:'NA',PA:'NA',KN:'NA',LC:'NA',VC:'NA',TT:'NA',US:'NA',PR:'NA',GL:'NA',BM:'NA',KY:'NA',AW:'NA',CW:'NA',
+        AR:'SA',BO:'SA',BR:'SA',CL:'SA',CO:'SA',EC:'SA',GY:'SA',PY:'SA',PE:'SA',SR:'SA',UY:'SA',VE:'SA',GF:'SA',
+        AU:'OC',FJ:'OC',KI:'OC',MH:'OC',FM:'OC',NR:'OC',NZ:'OC',PW:'OC',PG:'OC',WS:'OC',SB:'OC',TO:'OC',TV:'OC',VU:'OC',NC:'OC',PF:'OC',GU:'OC',
+        AQ:'AN'
+    };
+    const CONTINENT_NAMES = { AF:'Africa', AS:'Asia', EU:'Europe', NA:'North America', SA:'South America', OC:'Oceania', AN:'Antarctica' };
+
     const ACHIEVEMENTS_DEF = [
-        { id: 'first_game', icon: '🎮', title: 'Rookie Traveler', desc: 'Play your first game' },
-        { id: 'bullseye', icon: '🎯', title: 'Sharpshooter', desc: 'Get a 5,000 pts perfect hit' },
-        { id: 'high_score', icon: '🏆', title: 'Map Master', desc: 'Score over 20,000 points' }
+        { id: 'first_game',    icon: '🎮', title: 'Rookie Traveler',   desc: 'Play your first game' },
+        { id: 'bullseye',      icon: '🎯', title: 'Sharpshooter',      desc: 'Land a 5,000 pts perfect hit' },
+        { id: 'high_score',    icon: '🏆', title: 'Map Master',        desc: 'Score over 20,000 points in one game' },
+        { id: 'veteran',       icon: '🧭', title: 'Seasoned Explorer', desc: 'Play 25 games' },
+        { id: 'addict',        icon: '🌍', title: 'Globetrotter',      desc: 'Play 100 games' },
+        { id: 'sniper',        icon: '💥', title: 'Sniper',            desc: 'Land 50 bullseyes' },
+        { id: 'legend',        icon: '👑', title: 'Cartographer',      desc: 'Score over 40,000 points in one game' },
+        { id: 'perfect_game',  icon: '✨', title: 'Flawless Run',      desc: 'Bullseye every round in a 5+ round game' },
+        { id: 'close_call',    icon: '📏', title: 'Within Reach',      desc: 'Guess within 1 km of the centre' },
+        { id: 'expert_mode',   icon: '🔬', title: 'Pixel Peeper',      desc: 'Finish a game on Expert difficulty' },
+        { id: 'africa_100',    icon: '🦁', title: 'Safari Guide',      desc: 'Guess 100 locations in Africa' },
+        { id: 'asia_100',      icon: '🏯', title: 'Silk Road',         desc: 'Guess 100 locations in Asia' },
+        { id: 'europe_100',    icon: '🏰', title: 'Grand Tour',        desc: 'Guess 100 locations in Europe' },
+        { id: 'americas_100',  icon: '🗽', title: 'New World',         desc: 'Guess 100 locations in the Americas' },
+        { id: 'oceania_50',    icon: '🏝️', title: 'Island Hopper',     desc: 'Guess 50 locations in Oceania' },
+        { id: 'six_continents',icon: '🌐', title: 'Six Continents',    desc: 'Visit all six inhabited continents' },
+        { id: 'countries_50',  icon: '🚩', title: 'Passport Stamps',   desc: 'See locations in 50 different countries' },
+        { id: 'countries_100', icon: '🛂', title: 'Border Crosser',    desc: 'See locations in 100 different countries' },
+        { id: 'marathon',      icon: '⏱️', title: 'Marathon',          desc: 'Play 500 rounds in total' },
+        { id: 'multiplayer',   icon: '🤝', title: 'Better Together',   desc: 'Finish a multiplayer room game' },
+        { id: 'far_miss',      icon: '🙈', title: 'Wrong Hemisphere',  desc: 'Miss by more than 10,000 km' },
+        { id: 'city_slicker',  icon: '🌆', title: 'City Slicker',      desc: 'Finish 10 games in Cities mode' }
     ];
 
     function checkAchievements() {
         if (!currentUser.achievements) currentUser.achievements = [];
-        if (currentUser.gamesPlayed >= 1 && !currentUser.achievements.includes('first_game')) currentUser.achievements.push('first_game');
-        if (currentUser.perfectHits >= 1 && !currentUser.achievements.includes('bullseye')) currentUser.achievements.push('bullseye');
-        if (currentUser.highScore >= 20000 && !currentUser.achievements.includes('high_score')) currentUser.achievements.push('high_score');
+        const have = currentUser.achievements;
+        const unlock = (id, cond) => { if (cond && !have.includes(id)) have.push(id); };
+
+        const cnt = currentUser.continentCounts || {};
+        const americas = (cnt.NA || 0) + (cnt.SA || 0);
+        const inhabited = ['AF','AS','EU','NA','SA','OC'];
+        const visitedAll = inhabited.every(c => (cnt[c] || 0) > 0);
+
+        unlock('first_game',    (currentUser.gamesPlayed || 0) >= 1);
+        unlock('bullseye',      (currentUser.perfectHits || 0) >= 1);
+        unlock('high_score',    (currentUser.highScore || 0) >= 20000);
+        unlock('veteran',       (currentUser.gamesPlayed || 0) >= 25);
+        unlock('addict',        (currentUser.gamesPlayed || 0) >= 100);
+        unlock('sniper',        (currentUser.perfectHits || 0) >= 50);
+        unlock('legend',        (currentUser.highScore || 0) >= 40000);
+        unlock('perfect_game',  !!currentUser.hadPerfectGame);
+        unlock('close_call',    !!currentUser.gotCloseCall);
+        unlock('expert_mode',   !!currentUser.finishedExpert);
+        unlock('africa_100',    (cnt.AF || 0) >= 100);
+        unlock('asia_100',      (cnt.AS || 0) >= 100);
+        unlock('europe_100',    (cnt.EU || 0) >= 100);
+        unlock('americas_100',  americas >= 100);
+        unlock('oceania_50',    (cnt.OC || 0) >= 50);
+        unlock('six_continents', visitedAll);
+        unlock('countries_50',  (currentUser.countriesSeen || []).length >= 50);
+        unlock('countries_100', (currentUser.countriesSeen || []).length >= 100);
+        unlock('marathon',      (currentUser.roundsPlayed || 0) >= 500);
+        unlock('multiplayer',   !!currentUser.playedMultiplayer);
+        unlock('far_miss',      !!currentUser.gotFarMiss);
+        unlock('city_slicker',  ((currentUser.gamesByMode || {}).cities || 0) >= 10);
+
         saveUserData();
     }
 
@@ -397,11 +483,30 @@
         document.getElementById('user-games').textContent = currentUser.gamesPlayed || 0;
         document.getElementById('user-highscore').textContent = currentUser.highScore || 0;
         document.getElementById('user-perfects').textContent = currentUser.perfectHits || 0;
-        
+        document.getElementById('user-rounds').textContent = currentUser.roundsPlayed || 0;
+        document.getElementById('user-countries').textContent = (currentUser.countriesSeen || []).length;
+
+        const cc2 = currentUser.continentCounts || {};
+        document.getElementById('user-continents').textContent = Object.keys(cc2).filter(k => cc2[k] > 0).length;
+
+        const bm = currentUser.bestByMode || {};
+        document.getElementById('best-tiles').textContent = (bm.tiles || 0).toLocaleString();
+        document.getElementById('best-cities').textContent = (bm.cities || 0).toLocaleString();
+        document.getElementById('best-country').textContent = (bm.country || 0).toLocaleString();
+
+        const cbEl = document.getElementById('continent-breakdown');
+        const parts = Object.keys(cc2).filter(k => cc2[k] > 0)
+            .sort((a, b) => cc2[b] - cc2[a])
+            .map(k => `${CONTINENT_NAMES[k] || k}: <strong style="color:#38bdf8">${cc2[k]}</strong>`);
+        cbEl.innerHTML = parts.length ? 'Locations by continent — ' + parts.join(' · ') : '';
+
         const achList = document.getElementById('achievements-list');
         achList.innerHTML = '';
-        ACHIEVEMENTS_DEF.forEach(a => {
-            const unlocked = currentUser.achievements && currentUser.achievements.includes(a.id);
+        const owned = currentUser.achievements || [];
+        const sortedAch = [...ACHIEVEMENTS_DEF].sort((a, b) =>
+            (owned.includes(b.id) ? 1 : 0) - (owned.includes(a.id) ? 1 : 0));
+        sortedAch.forEach(a => {
+            const unlocked = owned.includes(a.id);
             achList.innerHTML += `<div class="achievement-item" style="opacity: ${unlocked?1:0.4}"><span class="ach-icon">${a.icon}</span>
                 <div><strong style="color: ${unlocked?'#38bdf8':'#94a3b8'}">${a.title}</strong>
                 <div style="font-size:10px; color:#64748b;">${a.desc} ${unlocked?'✓':''}</div></div></div>`;
@@ -485,7 +590,21 @@
             };
         }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
-        const countries = Array.from(new Set(allPoints.map(p => p.country))).filter(c => c).sort();
+        // країни, де замало РІЗНИХ локацій (Монако, Ватикан, Сан-Марино...), у режим не потрапляють
+        const MIN_LOCATIONS = 10;
+        const countByCountry = {};
+        const cellSeen = {};
+        allPoints.forEach(p => {
+            if (!p.country) return;
+            const k = Math.round(p.lat / 0.15) + '_' + Math.round(p.lng / 0.15);
+            if (!cellSeen[p.country]) cellSeen[p.country] = new Set();
+            if (cellSeen[p.country].has(k)) return;
+            cellSeen[p.country].add(k);
+            countByCountry[p.country] = (countByCountry[p.country] || 0) + 1;
+        });
+        const countries = Array.from(new Set(allPoints.map(p => p.country)))
+            .filter(c => c && countByCountry[c] >= MIN_LOCATIONS).sort();
+        console.log('Countries available:', countries.length);
         const dropdownList = document.getElementById('country-dropdown-list');
         dropdownList.innerHTML = '';
         
@@ -530,6 +649,7 @@
 
     document.getElementById('start-btn').addEventListener('click', () => {
         const roomCode = document.getElementById('room-code').value.trim().toUpperCase();
+        activeRoomCode = roomCode;
         if (roomCode) {
             let seed = xmur3(roomCode);
             myRNG = mulberry32(seed());
@@ -672,7 +792,9 @@
         updateSatelliteMask(currentBounds);
 
         round++;
-        statusEl.textContent = `Round ${round} of ${totalRounds}`;
+        statusEl.textContent = activeRoomCode
+            ? `Round ${round} of ${totalRounds} · Room ${activeRoomCode}`
+            : `Round ${round} of ${totalRounds}`;
         btn.textContent = 'Check'; btn.disabled = true;
 
         const timerSetting = parseInt(document.getElementById('timer-select').value);
@@ -738,6 +860,17 @@
         totalScore += roundScore;
         gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore, timedOut });
 
+        // особиста статистика
+        currentUser.roundsPlayed = (currentUser.roundsPlayed || 0) + 1;
+        if (!currentUser.continentCounts) currentUser.continentCounts = {};
+        if (!currentUser.countriesSeen) currentUser.countriesSeen = [];
+        const cc = (answer.country || '').toUpperCase();
+        const cont = ISO_TO_CONTINENT[cc];
+        if (cont) currentUser.continentCounts[cont] = (currentUser.continentCounts[cont] || 0) + 1;
+        if (cc && !currentUser.countriesSeen.includes(cc)) currentUser.countriesSeen.push(cc);
+        if (!timedOut && distKm > 0 && distKm <= 1) currentUser.gotCloseCall = true;
+        if (!timedOut && distKm >= 10000) currentUser.gotFarMiss = true;
+
         targetRect = L.rectangle(currentBounds, { color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.3 }).addTo(guessMap);
         const center = [answer.lat, answer.lng];
         if (timedOut) {
@@ -755,6 +888,7 @@
         const resultDetail = timedOut ? `Time up` : (isInside ? `Bullseye!` : `${distKm.toFixed(1)} km away`);
         let locationText = '';
         if (currentGameMode === 'cities') locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
+        else if (currentGameMode === 'tiles') locationText = countryHtml;
         statusEl.innerHTML = locationText
             ? `+${roundScore} pts (${resultDetail}) — ${locationText}`
             : `+${roundScore} pts (${resultDetail})`;
@@ -772,6 +906,21 @@
         phase = 'finished'; btn.disabled = true;
         currentUser.gamesPlayed = (currentUser.gamesPlayed || 0) + 1;
         if (totalScore > (currentUser.highScore || 0)) currentUser.highScore = totalScore;
+
+        if (!currentUser.bestByMode) currentUser.bestByMode = {};
+        if (totalScore > (currentUser.bestByMode[currentGameMode] || 0))
+            currentUser.bestByMode[currentGameMode] = totalScore;
+        if (!currentUser.gamesByMode) currentUser.gamesByMode = {};
+        currentUser.gamesByMode[currentGameMode] = (currentUser.gamesByMode[currentGameMode] || 0) + 1;
+
+        const allBullseye = gameHistory.length >= 5 && gameHistory.every(h => h.isInside);
+        if (allBullseye) currentUser.hadPerfectGame = true;
+        if (activeRoomCode) currentUser.playedMultiplayer = true;
+        const diffNow = (currentGameMode === 'country')
+            ? document.getElementById('country-difficulty').value
+            : (currentGameMode === 'tiles' ? document.getElementById('tiles-difficulty').value
+                                           : document.getElementById('cities-difficulty').value);
+        if (diffNow === 'expert') currentUser.finishedExpert = true;
         const earnedXP = Math.round(totalScore * 0.2);
         currentUser.xp = (currentUser.xp || 0) + earnedXP;
         checkAchievements();
@@ -785,6 +934,7 @@
             const countryHtml = getCountryHTML(h.answer.country);
             let locationText = '';
             if (currentGameMode === 'cities') locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
+            else if (currentGameMode === 'tiles') locationText = countryHtml;
             breakdownList.innerHTML += `<div class="breakdown-row">
                 <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
                 <span style="color: ${h.timedOut ? '#94a3b8' : (h.isInside ? '#10b981' : '#38bdf8')}; font-weight:700;">+${h.roundScore} pts (${h.timedOut ? 'Time up' : (h.isInside ? 'Bullseye' : h.distKm.toFixed(0) + ' km')})</span>
