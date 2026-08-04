@@ -360,6 +360,7 @@
                     <div class="stat-card"><div id="user-highscore" class="stat-value">0</div><div class="stat-label">Best score</div></div>
                     <div class="stat-card"><div id="user-perfects" class="stat-value">0</div><div class="stat-label">Bullseyes</div></div>
                     <div class="stat-card"><div id="user-countries" class="stat-value">0</div><div class="stat-label">Countries</div></div>
+                    <div class="stat-card"><div id="user-beststreak" class="stat-value">0</div><div class="stat-label">Longest streak</div></div>
                 </div>
 
                 <div class="panel-box" style="text-align:center;">
@@ -604,6 +605,8 @@
         if (accEl) accEl.textContent = acc + '%';
         const stEl = document.getElementById('user-streak');
         if (stEl) stEl.textContent = currentUser.streak || 0;
+        const bsEl = document.getElementById('user-beststreak');
+        if (bsEl) bsEl.textContent = currentUser.bestStreak || currentUser.streak || 0;
 
         const sr = document.getElementById('streak-row');
         const sd = document.getElementById('streak-days');
@@ -972,8 +975,7 @@
         document.getElementById('country-picker').style.display = 'flex';
         document.getElementById('picker-search').value = '';
         renderPickerList('');
-        sfx('tick');
-    }
+            }
     function renderPickerList(q) {
         const list = document.getElementById('picker-list');
         const sel = document.getElementById('cities-country');
@@ -989,8 +991,7 @@
                 sel.value = o.value;
                 document.getElementById('country-picker').style.display = 'none';
                 renderRegionCards();
-                sfx('tick');
-            };
+                            };
             list.appendChild(row);
         });
     }
@@ -1031,8 +1032,7 @@
     document.getElementById('theme-toggle').addEventListener('click', () => {
         const cur = document.documentElement.getAttribute('data-theme');
         applyTheme(cur === 'light' ? 'dark' : 'light');
-        sfx('tick');
-    });
+            });
 
     let soundOn = localStorage.getItem('wt_sound') !== 'off';
     let audioCtx = null;
@@ -1055,8 +1055,7 @@
             if (kind === 'pin') {
                 note(150, t, 0.055, 0.09, 'sine');           // глухий короткий "тук"
             } else if (kind === 'good') {
-                note(784, t, 0.14, 0.075, 'sine');           // G5
-                note(1175, t + 0.085, 0.22, 0.065, 'sine');  // D6 — м'який дзвіночок
+                note(880, t, 0.16, 0.055, 'sine');           // одна чиста нота, без мелодії
             } else if (kind === 'miss') {
                 note(300, t, 0.22, 0.08, 'sine', 180);
             } else if (kind === 'level') {
@@ -1075,8 +1074,7 @@
         document.getElementById('pane-ach').style.display = which === 'ach' ? 'block' : 'none';
         document.getElementById('tab-stats').classList.toggle('active', which === 'stats');
         document.getElementById('tab-ach').classList.toggle('active', which === 'ach');
-        sfx('tick');
-    }
+            }
 
     (function () {
         const t = document.getElementById('timer-toggle');
@@ -1087,8 +1085,7 @@
             t.classList.toggle('on', open);
             if (!open) document.getElementById('timer-select').value = '0';
             else document.getElementById('timer-select').value = '30';
-            sfx('tick');
-        });
+                    });
         document.getElementById('timer-select').value = '0';
     })();
 
