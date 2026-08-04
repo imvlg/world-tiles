@@ -147,9 +147,7 @@
         .tab.active { background:var(--surface); color:var(--accent);
             box-shadow:0 2px 8px -3px rgba(0,0,0,.4); }
 
-        .streak-row { display:flex; gap:5px; justify-content:center; margin-top:8px; }
-        .streak-pin { width:22px; height:22px; opacity:.25; }
-        .streak-pin.on { opacity:1; }
+        .streak-row { display:flex; gap:5px; justify-content:center; margin-top:14px; }
 
         .rounds-breakdown { margin-top:14px; text-align:left; background:var(--surface2);
             border-radius:13px; padding:10px; border:1px solid var(--line);
@@ -174,7 +172,6 @@
     <div id="top-bar">
         <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>World Tiles</div>
         <div class="user-profile">
-            <button id="sound-toggle" class="avatar-btn icon-btn on" title="Sound">&#9835;</button>
             <button id="theme-toggle" class="avatar-btn icon-btn" title="Theme">&#9789;</button>
             <span id="level-badge-top" class="level-badge">Lvl 1</span>
             <button id="profile-btn" class="avatar-btn"><span id="username-display">Player</span></button>
@@ -270,7 +267,7 @@
                 <label style="margin-top:12px;">Region</label>
                 <div id="continent-cards" style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;"></div>
 
-                <div id="cities-country-wrap" style="margin-top:8px;">
+                <div id="cities-country-wrap" style="display:none;">
                     <select id="cities-country"><option value="">Any country</option></select>
                 </div>
             </div>
@@ -314,6 +311,19 @@
     </div>
 
     <!-- User Profile Modal -->
+    <div id="country-picker" class="modal-overlay" style="display:none;">
+        <div class="modal" style="max-width:420px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Choose country</h2>
+                <button onclick="document.getElementById('country-picker').style.display='none'" class="avatar-btn icon-btn">&#10005;</button>
+            </div>
+            <div class="form-group" style="margin-top:12px;">
+                <input type="text" id="picker-search" placeholder="Search..." oninput="renderPickerList(this.value)">
+            </div>
+            <div id="picker-list" style="max-height:50vh; overflow-y:auto; background:var(--surface2); border:1px solid var(--line); border-radius:12px; padding:6px;"></div>
+        </div>
+    </div>
+
     <div id="profile-modal" class="modal-overlay" style="display: none;">
         <div class="modal">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -350,12 +360,18 @@
                     <div class="stat-card"><div id="user-highscore" class="stat-value">0</div><div class="stat-label">Best score</div></div>
                     <div class="stat-card"><div id="user-perfects" class="stat-value">0</div><div class="stat-label">Bullseyes</div></div>
                     <div class="stat-card"><div id="user-countries" class="stat-value">0</div><div class="stat-label">Countries</div></div>
-                    <div class="stat-card"><div id="user-streak" class="stat-value">0</div><div class="stat-label">Day streak</div></div>
                 </div>
 
-                <div class="panel-box">
-                    <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;">This week</div>
+                <div class="panel-box" style="text-align:center;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                        <span id="user-streak" style="font-size:30px; font-weight:800; color:var(--gold); line-height:1;">0</span>
+                        <div style="text-align:left;">
+                            <div style="font-size:13px; font-weight:700;">day streak</div>
+                            <div id="streak-sub" style="font-size:10.5px; color:var(--muted);">play daily to keep it alive</div>
+                        </div>
+                    </div>
                     <div id="streak-row" class="streak-row"></div>
+                    <div id="streak-days" style="display:flex; gap:5px; justify-content:center; margin-top:5px;"></div>
                 </div>
 
                 <div style="font-size:11px; color:var(--muted); margin:12px 0 6px; text-transform:uppercase; letter-spacing:.5px;">Best score per mode</div>
@@ -590,15 +606,34 @@
         if (stEl) stEl.textContent = currentUser.streak || 0;
 
         const sr = document.getElementById('streak-row');
+        const sd = document.getElementById('streak-days');
         if (sr) {
-            sr.innerHTML = '';
+            sr.innerHTML = ''; if (sd) sd.innerHTML = '';
             const days = currentUser.playDays || [];
+            const L = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            const todayStr = new Date().toDateString();
             for (let i = 6; i >= 0; i--) {
-                const d = new Date(Date.now() - i * 86400000).toDateString();
+                const dt = new Date(Date.now() - i * 86400000);
+                const d = dt.toDateString();
                 const on = days.includes(d);
-                sr.innerHTML += `<div class="streak-pin ${on ? 'on' : ''}">` +
-                    `<svg viewBox="-28 -4 56 68" width="22" height="22"><path d="M0,60 C-22,30 -22,10 0,0 C22,10 22,30 0,60 Z" fill="${on ? 'var(--accent)' : 'var(--muted)'}"/><circle cx="0" cy="20" r="7" fill="var(--bg2)"/></svg></div>`;
+                const isToday = d === todayStr;
+                sr.innerHTML +=
+                    `<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        background:${on ? 'var(--gold)' : 'var(--surface)'};
+                        border:2px solid ${isToday ? 'var(--accent)' : (on ? 'var(--gold)' : 'var(--line)')};
+                        box-shadow:${on ? '0 3px 10px -3px var(--gold)' : 'none'};">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
+                             stroke="${on ? 'var(--bg2)' : 'var(--muted)'}" stroke-width="2.4"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            ${on ? '<path d="M20 6L9 17l-5-5"/>'
+                                 : '<circle cx="12" cy="12" r="7"/>'}
+                        </svg>
+                    </div>`;
+                if (sd) sd.innerHTML += `<div style="width:30px;text-align:center;font-size:9px;color:var(--muted);">${L[dt.getDay()]}</div>`;
             }
+            const best = currentUser.bestStreak || 0;
+            const sub = document.getElementById('streak-sub');
+            if (sub) sub.textContent = best > 1 ? `best streak: ${best} days` : 'play daily to keep it alive';
         }
 
         const cc2 = currentUser.continentCounts || {};
@@ -617,12 +652,12 @@
                 const ok = pinUnlocked(pin);
                 const sel = ok && pin.id === activeId;
                 const d = document.createElement('div');
-                d.style.cssText = `background:#0f172a; border:2px solid ${sel ? '#38bdf8' : '#334155'};
-                    border-radius:10px; padding:8px 4px; text-align:center; cursor:${ok ? 'pointer' : 'default'};
+                d.style.cssText = `background:var(--surface2); border:2px solid ${sel ? 'var(--accent)' : 'var(--line)'};
+                    border-radius:12px; padding:8px 4px; text-align:center; cursor:${ok ? 'pointer' : 'default'};
                     opacity:${ok ? 1 : 0.35};`;
                 d.innerHTML = `<div style="height:36px; display:flex; align-items:center; justify-content:center;">${pin.svg}</div>
-                    <div style="font-size:10px; color:${ok ? '#e2e8f0' : '#64748b'}; margin-top:4px;">${pin.name}</div>
-                    <div style="font-size:9px; color:#64748b;">${ok ? (sel ? 'active' : 'tap to use') : 'Lvl ' + pin.level}</div>`;
+                    <div style="font-size:10px; color:${ok ? 'var(--text)' : 'var(--muted)'}; margin-top:4px;">${pin.name}</div>
+                    <div style="font-size:9px; color:var(--muted);">${ok ? (sel ? 'active' : 'tap to use') : 'Lvl ' + pin.level}</div>`;
                 if (ok) d.onclick = () => { currentUser.pin = pin.id; saveUserData(); updateProfileUI(); };
                 pinList.appendChild(d);
             });
@@ -794,6 +829,12 @@
             cellSeen[p.country].add(k);
             countByCountry[p.country] = (countByCountry[p.country] || 0) + 1;
         });
+        window.countryNameFn = (code) => {
+            const c = (code || '').toUpperCase();
+            if (ISO_TO_COUNTRY[c]) return ISO_TO_COUNTRY[c];
+            try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(c) || c; }
+            catch (e) { return c; }
+        };
         const countryName = (code) => {
             const c = (code || '').toUpperCase();
             if (ISO_TO_COUNTRY[c]) return ISO_TO_COUNTRY[c];
@@ -878,14 +919,33 @@
         const box = document.getElementById('continent-cards');
         if (!box) return;
         box.innerHTML = '';
+        const mk = (label, svg, on, onclick) => {
+            const d = document.createElement('div');
+            d.style.cssText = `background:${on ? 'var(--surface)' : 'var(--surface2)'};
+                border:2px solid ${on ? 'var(--accent)' : 'var(--line)'};
+                border-radius:12px; padding:7px 2px; text-align:center; cursor:pointer;
+                color:${on ? 'var(--accent)' : 'var(--muted)'};
+                transition:transform .08s, border-color .18s, background .18s;`;
+            d.onmousedown = () => d.style.transform = 'translateY(2px)';
+            d.onmouseup = d.onmouseleave = () => d.style.transform = '';
+            d.innerHTML = `<div style="display:flex; justify-content:center;">${svg}</div>
+                <div style="font-size:10px; margin-top:3px; color:${on ? 'var(--text)' : 'var(--muted)'};">${label}</div>`;
+            d.onclick = onclick;
+            return d;
+        };
+
         REGIONS.forEach(r => {
             const on = selectedRegions.includes(r.code);
             const d = document.createElement('div');
-            d.style.cssText = `background:${on ? '#1e293b' : '#0f172a'}; border:2px solid ${on ? '#38bdf8' : '#334155'};
-                border-radius:10px; padding:6px 2px; text-align:center; cursor:pointer;
-                color:${on ? '#38bdf8' : '#64748b'}; transition:0.15s;`;
+            d.style.cssText = `background:${on ? 'var(--surface)' : 'var(--surface2)'};
+                border:2px solid ${on ? 'var(--accent)' : 'var(--line)'};
+                border-radius:12px; padding:7px 2px; text-align:center; cursor:pointer;
+                color:${on ? 'var(--accent)' : 'var(--muted)'};
+                transition:transform .08s, border-color .18s, background .18s;`;
+            d.onmousedown = () => d.style.transform = 'translateY(2px)';
+            d.onmouseup = d.onmouseleave = () => d.style.transform = '';
             d.innerHTML = `<div style="display:flex; justify-content:center;">${r.svg}</div>
-                <div style="font-size:10px; margin-top:2px; color:${on ? '#e2e8f0' : '#64748b'};">${r.name}</div>`;
+                <div style="font-size:10px; margin-top:3px; color:${on ? 'var(--text)' : 'var(--muted)'};">${r.name}</div>`;
             d.onclick = () => {
                 if (r.code === 'ALL') { selectedRegions = ['ALL']; }
                 else {
@@ -898,7 +958,43 @@
             };
             box.appendChild(d);
         });
+
+        const sel = document.getElementById('cities-country');
+        const chosen = sel ? sel.value : '';
+        const flagSvg = chosen
+            ? `<img src="https://flagcdn.com/32x24/${chosen.toLowerCase()}.png" style="width:30px;height:23px;border-radius:3px;object-fit:cover;">`
+            : '<svg viewBox="0 0 96 80" width="44" height="36"><path d="M26 8 L26 72" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M26 12 L74 24 L26 40 Z" fill="currentColor"/></svg>';
+        const label = chosen ? (window.countryNameFn ? window.countryNameFn(chosen) : chosen) : 'Country';
+        box.appendChild(mk(label, flagSvg, !!chosen, openCountryPicker));
     }
+
+    function openCountryPicker() {
+        document.getElementById('country-picker').style.display = 'flex';
+        document.getElementById('picker-search').value = '';
+        renderPickerList('');
+        sfx('tick');
+    }
+    function renderPickerList(q) {
+        const list = document.getElementById('picker-list');
+        const sel = document.getElementById('cities-country');
+        list.innerHTML = '';
+        const opts = Array.from(sel.options);
+        opts.filter(o => o.textContent.toLowerCase().includes(q.toLowerCase())).forEach(o => {
+            const row = document.createElement('div');
+            row.className = 'custom-dropdown-item';
+            row.innerHTML = o.value
+                ? `<img src="https://flagcdn.com/20x15/${o.value.toLowerCase()}.png" class="flag-img"> ${o.textContent}`
+                : `<span style="opacity:.7">${o.textContent}</span>`;
+            row.onclick = () => {
+                sel.value = o.value;
+                document.getElementById('country-picker').style.display = 'none';
+                renderRegionCards();
+                sfx('tick');
+            };
+            list.appendChild(row);
+        });
+    }
+
     function chosenContinents() {
         return selectedRegions.includes('ALL') ? [] : selectedRegions.slice();
     }
@@ -945,33 +1041,34 @@
         try {
             audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
             const t = audioCtx.currentTime;
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            const P = {
-                pin:   { f: 660, f2: 990, d: 0.10, v: 0.10, type: 'triangle' },
-                good:  { f: 520, f2: 880, d: 0.20, v: 0.11, type: 'sine' },
-                miss:  { f: 300, f2: 180, d: 0.22, v: 0.09, type: 'sine' },
-                tick:  { f: 440, f2: 440, d: 0.05, v: 0.05, type: 'square' },
-                level: { f: 600, f2: 1200, d: 0.35, v: 0.12, type: 'triangle' }
-            }[kind] || { f: 440, f2: 440, d: 0.06, v: 0.05, type: 'sine' };
-            o.type = P.type;
-            o.frequency.setValueAtTime(P.f, t);
-            o.frequency.exponentialRampToValueAtTime(P.f2, t + P.d);
-            g.gain.setValueAtTime(P.v, t);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + P.d);
-            o.start(t); o.stop(t + P.d + 0.02);
+            const note = (freq, start, dur, vol, type, sweepTo) => {
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = type || 'sine';
+                o.frequency.setValueAtTime(freq, start);
+                if (sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo, start + dur);
+                g.gain.setValueAtTime(0.0001, start);
+                g.gain.exponentialRampToValueAtTime(vol, start + 0.008);
+                g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(start); o.stop(start + dur + 0.02);
+            };
+            if (kind === 'pin') {
+                note(150, t, 0.055, 0.09, 'sine');           // глухий короткий "тук"
+            } else if (kind === 'good') {
+                note(784, t, 0.14, 0.075, 'sine');           // G5
+                note(1175, t + 0.085, 0.22, 0.065, 'sine');  // D6 — м'який дзвіночок
+            } else if (kind === 'miss') {
+                note(300, t, 0.22, 0.08, 'sine', 180);
+            } else if (kind === 'level') {
+                note(659, t, 0.13, 0.08, 'triangle');
+                note(988, t + 0.1, 0.13, 0.08, 'triangle');
+                note(1319, t + 0.2, 0.3, 0.08, 'triangle');
+            } else {
+                note(520, t, 0.04, 0.035, 'sine');
+            }
         } catch (e) {}
     }
-    (function () {
-        const b = document.getElementById('sound-toggle');
-        b.classList.toggle('on', soundOn);
-        b.addEventListener('click', () => {
-            soundOn = !soundOn;
-            localStorage.setItem('wt_sound', soundOn ? 'on' : 'off');
-            b.classList.toggle('on', soundOn);
-            if (soundOn) sfx('tick');
-        });
-    })();
+    soundOn = true;
 
     function switchProfileTab(which) {
         document.getElementById('pane-stats').style.display = which === 'stats' ? 'block' : 'none';
@@ -1002,6 +1099,7 @@
             const y = new Date(Date.now() - 86400000).toDateString();
             currentUser.streak = (last === y) ? (currentUser.streak || 0) + 1 : 1;
             currentUser.lastPlayed = today;
+            if ((currentUser.streak || 0) > (currentUser.bestStreak || 0)) currentUser.bestStreak = currentUser.streak;
             if (!currentUser.playDays) currentUser.playDays = [];
             currentUser.playDays.push(today);
             if (currentUser.playDays.length > 14) currentUser.playDays.shift();
@@ -1299,7 +1397,7 @@
         let locationText = '';
         const capMode = currentGameMode === 'cities' &&
             document.getElementById('cities-source').value === 'capitals';
-        if (capMode) locationText = answer.name ? `${answer.name}, ${countryHtml}` : countryHtml;
+        if (capMode) locationText = answer.name || '';
         statusEl.innerHTML = locationText
             ? `+${roundScore} pts (${resultDetail}) — ${locationText}`
             : `+${roundScore} pts (${resultDetail})`;
@@ -1347,7 +1445,7 @@
             let locationText = '';
             const capMode2 = currentGameMode === 'cities' &&
                 document.getElementById('cities-source').value === 'capitals';
-            if (capMode2) locationText = h.answer.name ? `${h.answer.name} (${countryHtml})` : countryHtml;
+            if (capMode2) locationText = h.answer.name || '';
             else if (currentGameMode === 'tiles') locationText = countryHtml;
             breakdownList.innerHTML += `<div class="breakdown-row">
                 <span style="display:flex; align-items:center;"><strong>#${h.roundNum}</strong>&nbsp; ${locationText}</span>
