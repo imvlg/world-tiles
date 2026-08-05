@@ -1341,8 +1341,9 @@
             qs.push({ type: 'choice', q: `Which currency symbol is used in ${nm}?`,
                 answer: right, options: [right, ...pickWrong(all.flatMap(c => c.s || []), right, 3)] });
         }
+        const nb = (f.bd || []).length;
         qs.push({ type: 'slider', q: `How many countries border ${nm}?`,
-            min: 0, max: Math.max(8, f.b * 3), answer: f.b, unit: 'neighbours', integer: true });
+            min: 0, max: Math.max(8, nb * 3), answer: nb, unit: 'neighbours', integer: true });
 
         console.log('quiz: built', qs.length, 'questions for', iso);
         return qs.slice(0, 7);
