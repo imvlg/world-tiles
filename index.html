@@ -156,6 +156,9 @@
             padding:7px 0; border-bottom:1px solid var(--line); font-size:12px; }
         .breakdown-row:last-child { border-bottom:none; }
 
+        .hint-btn { width:34px; height:34px; padding:0; border-radius:10px; font-weight:800; font-size:13px; }
+        .hint-btn.used { opacity:.35; cursor:not-allowed; border-color:var(--line); }
+        .hint-btn.active { border-color:var(--gold); color:var(--gold); }
         .collapse { display:none; }
         .collapse.open { display:block; }
 
@@ -184,7 +187,12 @@
             <span id="status" class="status-text">Round 1</span>
             <span id="timer-display" class="timer-badge">30s</span>
             <span id="score" class="score-badge">You: 0 pts</span>
-            <button id="btn" class="btn-primary" disabled style="margin-left: auto;">Check</button>
+            <div id="hint-box" style="display:flex; gap:5px; margin-left:auto;">
+                <button class="avatar-btn hint-btn" data-hint="1" title="Wide search area (-15%)">1</button>
+                <button class="avatar-btn hint-btn" data-hint="2" title="Narrow search area (-30%)">2</button>
+                <button class="avatar-btn hint-btn" data-hint="3" title="Second try with distance (-45%)">3</button>
+            </div>
+            <button id="btn" class="btn-primary" disabled>Check</button>
         </div>
 
         <div class="panel"><div id="satellite"></div></div>
@@ -950,6 +958,8 @@
             d.innerHTML = `<div style="display:flex; justify-content:center;">${r.svg}</div>
                 <div style="font-size:10px; margin-top:3px; color:${on ? 'var(--text)' : 'var(--muted)'};">${r.name}</div>`;
             d.onclick = () => {
+                const cs = document.getElementById('cities-country');
+                if (cs) cs.value = '';                  // континент скасовує вибір країни
                 if (r.code === 'ALL') { selectedRegions = ['ALL']; }
                 else {
                     selectedRegions = selectedRegions.filter(c => c !== 'ALL');
@@ -965,8 +975,8 @@
         const sel = document.getElementById('cities-country');
         const chosen = sel ? sel.value : '';
         const flagSvg = chosen
-            ? `<img src="https://flagcdn.com/32x24/${chosen.toLowerCase()}.png" style="width:30px;height:23px;border-radius:3px;object-fit:cover;">`
-            : '<svg viewBox="0 0 96 80" width="44" height="36"><path d="M26 8 L26 72" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M26 12 L74 24 L26 40 Z" fill="currentColor"/></svg>';
+            ? `<div style="height:36px;display:flex;align-items:center;justify-content:center;"><img src="https://flagcdn.com/40x30/${chosen.toLowerCase()}.png" style="width:34px;height:26px;border-radius:3px;object-fit:cover;"></div>`
+            : '<div style="height:36px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 96 80" width="44" height="36"><path d="M26 8 L26 72" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M26 12 L74 24 L26 40 Z" fill="currentColor"/></svg></div>';
         const label = chosen ? (window.countryNameFn ? window.countryNameFn(chosen) : chosen) : 'Country';
         box.appendChild(mk(label, flagSvg, !!chosen, openCountryPicker));
     }
@@ -989,6 +999,7 @@
                 : `<span style="opacity:.7">${o.textContent}</span>`;
             row.onclick = () => {
                 sel.value = o.value;
+                selectedRegions = o.value ? [] : ['ALL'];
                 document.getElementById('country-picker').style.display = 'none';
                 renderRegionCards();
                             };
@@ -997,7 +1008,8 @@
     }
 
     function chosenContinents() {
-        return selectedRegions.includes('ALL') ? [] : selectedRegions.slice();
+        if (selectedRegions.includes('ALL')) return [];
+        return selectedRegions.slice();
     }
 
     function refreshCitiesUI() {
@@ -1005,7 +1017,7 @@
         if (!src) return;
         const isCap = src.value === 'capitals';
         document.getElementById('cities-size-wrap').style.display = isCap ? 'none' : 'block';
-        document.getElementById('cities-country-wrap').style.display = isCap ? 'none' : 'block';
+        document.getElementById('cities-country-wrap').style.display = 'none';
     }
     (function () {
         const el = document.getElementById('cities-source');
@@ -1103,6 +1115,75 @@
         }
     }
 
+
+    // ===== підказки =====
+    const HINT_COST = { 1: 0.15, 2: 0.30, 3: 0.45 };
+    let hintsUsed = [], hintLayers = [], secondChance = false, usedSecondChance = false;
+
+    function clearHints() {
+        hintLayers.forEach(l => guessMap.removeLayer(l));
+        hintLayers = [];
+        hintsUsed = [];
+        secondChance = false;
+        usedSecondChance = false;
+        document.querySelectorAll('.hint-btn').forEach(b => {
+            b.classList.remove('used', 'active');
+            b.disabled = false;
+        });
+    }
+
+    function tileHalfKm() {
+        const hLat = (currentBounds.getNorth() - currentBounds.getSouth()) / 2;
+        const hLng = (currentBounds.getEast() - currentBounds.getWest()) / 2;
+        const kLng = 111.32 * Math.cos(answer.lat * Math.PI / 180);
+        return (hLat * 111.32 + hLng * kLng) / 2;
+    }
+
+    function hintRadiusKm(level) {
+        const h = tileHalfKm();
+        if (level === 1) return Math.min(Math.max(h * 12, 150), 2500);
+        return Math.min(Math.max(h * 4, 50), 800);
+    }
+
+    function useHint(level) {
+        if (phase !== 'guessing' || hintsUsed.includes(level)) return;
+        hintsUsed.push(level);
+        const btn = document.querySelector(`.hint-btn[data-hint="${level}"]`);
+
+        if (level === 3) {
+            secondChance = true;
+            btn.classList.add('active');
+            statusEl.textContent = 'Second try unlocked — you will see the distance after your first guess';
+        } else {
+            const rKm = hintRadiusKm(level);
+            // центр кола зміщено випадково, щоб не видавати точку напряму
+            const off = rKm * 0.35;
+            const bearing = Math.random() * Math.PI * 2;
+            const cLat = answer.lat + (off * Math.sin(bearing)) / 111.32;
+            const cLng = answer.lng + (off * Math.cos(bearing)) /
+                         (111.32 * Math.cos(answer.lat * Math.PI / 180));
+            const circle = L.circle([cLat, cLng], {
+                radius: rKm * 1000,
+                color: level === 1 ? '#E8B341' : '#3FC2E8',
+                weight: 2, dashArray: '6,6', fillOpacity: 0.07
+            }).addTo(guessMap);
+            hintLayers.push(circle);
+            guessMap.fitBounds(circle.getBounds().pad(0.2));
+            btn.classList.add('used');
+        }
+        btn.disabled = true;
+    }
+
+    document.querySelectorAll('.hint-btn').forEach(b => {
+        b.addEventListener('click', () => useHint(parseInt(b.dataset.hint)));
+    });
+
+    function hintPenalty() {
+        let p = 0;
+        hintsUsed.forEach(h => p += HINT_COST[h]);
+        return Math.min(p, 0.7);
+    }
+
     function openLobby() { document.getElementById('end-modal').style.display = 'none'; document.getElementById('lobby-modal').style.display = 'flex'; }
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
@@ -1189,6 +1270,21 @@
         if (deduped.length >= 5) pool = deduped;
         console.log('Pool after dedupe:', pool.length, 'cell', cell);
 
+        // не повторювати локації, доки не вичерпається запас
+        const seenKey = 'wt_seen_' + currentGameMode;
+        let seen = [];
+        try { seen = JSON.parse(localStorage.getItem(seenKey) || '[]'); } catch (e) { seen = []; }
+        const keyOf = pt => pt.lat.toFixed(3) + ',' + pt.lng.toFixed(3);
+        const fresh = pool.filter(pt => !seen.includes(keyOf(pt)));
+        if (fresh.length >= totalRounds) {
+            pool = fresh;
+        } else {
+            seen = [];                                   // запас вичерпано — починаємо коло заново
+            localStorage.setItem(seenKey, '[]');
+        }
+        window.__seenKey = seenKey;
+        window.__keyOf = keyOf;
+
         activePool = shuffle([...pool]);
         
         totalRounds = parseInt(document.getElementById('rounds-select').value);
@@ -1229,9 +1325,19 @@
         guessMarker = targetRect = line = guess = null;
         timedOut = false;
         phase = 'guessing';
+        clearHints();
 
         if (activePool.length === 0) activePool = shuffle([...allPoints]);
         answer = activePool.pop();
+        try {
+            const k = window.__seenKey;
+            if (k) {
+                const arr = JSON.parse(localStorage.getItem(k) || '[]');
+                arr.push(window.__keyOf(answer));
+                if (arr.length > 4000) arr.splice(0, arr.length - 4000);
+                localStorage.setItem(k, JSON.stringify(arr));
+            }
+        } catch (e) {}
 
         let delta;
         if (currentGameMode === 'country') {
@@ -1329,6 +1435,18 @@
         if (timerMode === 'round' && timerInterval) clearInterval(timerInterval);
         if (!guess) return;
 
+        // підказка 3: перша спроба показує лише відстань і дає перепризначити шпильку
+        if (secondChance && !usedSecondChance && !timedOut) {
+            usedSecondChance = true;
+            const d0 = Math.round(L.latLng(answer.lat, answer.lng)
+                .distanceTo(L.latLng(guess[0], ((guess[1] + 540) % 360) - 180)) / 1000);
+            statusEl.textContent = `You are ${d0} km away — place the pin again`;
+            if (guessMarker) { guessMap.removeLayer(guessMarker); guessMarker = null; }
+            guess = null;
+            btn.disabled = true;
+            return;
+        }
+
         const guessLatLng = L.latLng(guess[0], ((guess[1] + 540) % 360) - 180);
         const isInside = timedOut ? false : currentBounds.contains(guessLatLng);
         let roundScore = 0, distKm = 0;
@@ -1361,6 +1479,8 @@
             if (roundScore < 100) roundScore = 0;
         }
 
+        const pen = hintPenalty();
+        if (pen > 0) roundScore = Math.round(roundScore * (1 - pen));
         totalScore += roundScore;
         sfx(isInside ? 'good' : 'miss');
         gameHistory.push({ roundNum: round, answer, guess, isInside, distKm, roundScore, timedOut });
@@ -1395,11 +1515,13 @@
         const capMode = currentGameMode === 'cities' &&
             document.getElementById('cities-source').value === 'capitals';
         if (capMode) locationText = answer.name || '';
-        statusEl.innerHTML = locationText
+        const penTxt = pen > 0 ? ` · hints −${Math.round(pen * 100)}%` : '';
+        statusEl.innerHTML = (locationText
             ? `+${roundScore} pts (${resultDetail}) — ${locationText}`
-            : `+${roundScore} pts (${resultDetail})`;
+            : `+${roundScore} pts (${resultDetail})`) + penTxt;
 
         phase = 'revealed';
+        document.querySelectorAll('.hint-btn').forEach(b => b.disabled = true);
         
         if (timerMode === 'game' && timerLeft <= 0) btn.textContent = 'Finish Game (Time Up)';
         else btn.textContent = (round >= totalRounds) ? 'Finish Game' : 'Next Round';
