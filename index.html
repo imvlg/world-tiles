@@ -257,6 +257,14 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h2 style="margin:0;">Lobby Settings</h2>
                 <div style="display:flex; gap:8px;">
+                    <button onclick="refreshSettingsUI();document.getElementById('settings-modal').style.display='flex';"
+                            class="avatar-btn icon-btn" title="Settings">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </button>
                     <button onclick="openProfileModal()" class="avatar-btn" style="font-size: 12px; padding: 4px 10px;">Profile</button>
                     <button onclick="document.getElementById('lobby-modal').style.display='none'" class="avatar-btn" style="font-size: 14px; padding: 4px 12px;" title="Close">&#10005;</button>
                 </div>
@@ -984,7 +992,8 @@
         const countries = Array.from(new Set(allPoints.map(p => p.country)))
             .filter(c => c && countByCountry[c] >= MIN_LOCATIONS)
             .sort((a, b) => countryName(a).localeCompare(countryName(b)));
-        window.totalCountriesInData = countries.length;
+        window.totalCountriesInData =
+            new Set(allPoints.map(p => (p.country || '').toUpperCase()).filter(Boolean)).size;
         console.log('Countries available:', countries.length);
         const citySel = document.getElementById('cities-country');
         if (citySel) {
@@ -1302,8 +1311,8 @@
 
 
     // ===== підказки =====
-    const HINT_COST = { retry: 0.40, area: 0.25 };
-    let hintsUsed = [], hintLayers = [], secondChance = false, usedSecondChance = false;
+    const HINT_COST = { retry: 0.40, retryFirst: 0.20, area: 0.25 };
+    let hintsUsed = [], hintLayers = [], secondChance = false, usedSecondChance = false, firstTryHit = false;
 
     function clearHints() {
         hintLayers.forEach(l => guessMap.removeLayer(l));
@@ -1311,6 +1320,7 @@
         hintsUsed = [];
         secondChance = false;
         usedSecondChance = false;
+        firstTryHit = false;
         document.querySelectorAll('.hint-btn').forEach(b => {
             b.classList.remove('used', 'active');
             b.disabled = false;
@@ -1324,8 +1334,24 @@
         return (hLat * 111.32 + hLng * kLng) / 2;
     }
 
+    function countryBBox(iso) {
+        const pts = allPoints.filter(p => (p.country || '').toUpperCase() === iso);
+        if (!pts.length) return null;
+        const lats = pts.map(p => p.lat), lngs = pts.map(p => p.lng);
+        return { s: Math.min(...lats), n: Math.max(...lats),
+                 w: Math.min(...lngs), e: Math.max(...lngs) };
+    }
+
     function hintRadiusKm() {
         const h = tileHalfKm();
+        if (currentGameMode === 'country') {
+            const bb = countryBBox((answer.country || '').toUpperCase());
+            if (bb) {
+                const kLng = 111.32 * Math.cos(answer.lat * Math.PI / 180);
+                const spanKm = Math.min((bb.n - bb.s) * 111.32, (bb.e - bb.w) * kLng);
+                return Math.max(spanKm * 0.30, 40);   // ~30% від меншого габариту країни
+            }
+        }
         return Math.min(Math.max(h * 12, 150), 2500);
     }
 
@@ -1343,9 +1369,21 @@
             // центр кола зміщено випадково, щоб не видавати точку напряму
             const off = rKm * 0.35;
             const bearing = Math.random() * Math.PI * 2;
-            const cLat = answer.lat + (off * Math.sin(bearing)) / 111.32;
-            const cLng = answer.lng + (off * Math.cos(bearing)) /
-                         (111.32 * Math.cos(answer.lat * Math.PI / 180));
+            const kLngH = 111.32 * Math.cos(answer.lat * Math.PI / 180);
+            let cLat = answer.lat + (off * Math.sin(bearing)) / 111.32;
+            let cLng = answer.lng + (off * Math.cos(bearing)) / kLngH;
+
+            // у режимі країни тримати коло всередині її меж
+            if (currentGameMode === 'country') {
+                const bb = countryBBox((answer.country || '').toUpperCase());
+                if (bb) {
+                    const rLat = rKm / 111.32, rLng = rKm / kLngH;
+                    cLat = Math.min(Math.max(cLat, bb.s + rLat * 0.4), bb.n - rLat * 0.4);
+                    cLng = Math.min(Math.max(cLng, bb.w + rLng * 0.4), bb.e - rLng * 0.4);
+                    if (bb.n - bb.s < rLat) cLat = (bb.n + bb.s) / 2;
+                    if (bb.e - bb.w < rLng) cLng = (bb.e + bb.w) / 2;
+                }
+            }
             const circle = L.circle([cLat, cLng], {
                 radius: rKm * 1000,
                 color: '#E8B341',
@@ -1364,7 +1402,10 @@
 
     function hintPenalty() {
         let p = 0;
-        hintsUsed.forEach(h => p += HINT_COST[h]);
+        hintsUsed.forEach(h => {
+            if (h === 'retry') p += firstTryHit ? HINT_COST.retryFirst : HINT_COST.retry;
+            else p += HINT_COST[h];
+        });
         return Math.min(p, 0.7);
     }
 
@@ -1520,7 +1561,7 @@
         const q = quizQuestions[quizIndex];
         const v = Number(document.getElementById('q-slider').value);
         const err = Math.abs(v - q.answer) / Math.max(1, q.answer);
-        const pts = Math.max(0, Math.round(100 * (1 - Math.min(1, err / 0.6))));
+        const pts = Math.max(0, Math.round(500 * (1 - Math.min(1, err / 0.6))));
         quizPoints += pts;
         quizLog.push({ q: q.q, your: Number(v).toLocaleString() + ' ' + q.unit,
             right: Number(q.answer).toLocaleString() + ' ' + q.unit, pts });
@@ -1541,10 +1582,19 @@
             <button class="btn-primary" style="width:100%;padding:11px;" onclick="nextQuiz()">Next</button>`;
     }
     function nextQuiz() { quizIndex++; renderQuizStep(); }
+    function rememberDailyCountry(iso) {
+        try {
+            let a = JSON.parse(localStorage.getItem('wt_daily_countries') || '[]');
+            if (iso && !a.includes(iso)) a.push(iso);
+            if (a.length > 40) a = a.slice(-40);
+            localStorage.setItem('wt_daily_countries', JSON.stringify(a));
+        } catch (e) {}
+    }
+
     function finishQuiz() {
         document.getElementById('quiz-modal').style.display = 'none';
         totalScore += quizPoints;
-        localStorage.setItem(DAILY_KEY, todayKey());
+        localStorage.setItem(DAILY_KEY, todayKey()); rememberDailyCountry((answer.country || '').toUpperCase());
         showEndGameModal();
     }
 
@@ -1573,8 +1623,13 @@
             countryPoints.forEach(p => uniqueMap.set(`${p.lat},${p.lng}`, p));
             pool = Array.from(uniqueMap.values());
         } else if (currentGameMode === 'daily') {
-            pool = allPoints.filter(p => p.pop >= 100000 && p.country);
+            let recent = [];
+            try { recent = JSON.parse(localStorage.getItem('wt_daily_countries') || '[]'); } catch (e) {}
+            pool = allPoints.filter(p => p.pop >= 100000 && p.country &&
+                !recent.includes((p.country || '').toUpperCase()));
+            if (pool.length < 5) pool = allPoints.filter(p => p.pop >= 100000 && p.country);
             totalRounds = 1;
+            console.log('Daily pool:', pool.length, '| recent countries:', recent.length);
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             const source = document.getElementById('cities-source').value;
@@ -1812,7 +1867,7 @@
                 quizQuestions = buildQuiz((answer.country || '').toUpperCase());
                 btn.disabled = false;
                 if (!quizQuestions.length) {
-                    localStorage.setItem(DAILY_KEY, todayKey());
+                    localStorage.setItem(DAILY_KEY, todayKey()); rememberDailyCountry((answer.country || '').toUpperCase());
                     showEndGameModal();
                 } else showQuiz();
                 return;
@@ -1828,14 +1883,18 @@
 
         // підказка 3: перша спроба показує лише відстань і дає перепризначити шпильку
         if (secondChance && !usedSecondChance && !timedOut) {
-            usedSecondChance = true;
-            const d0 = Math.round(L.latLng(answer.lat, answer.lng)
-                .distanceTo(L.latLng(guess[0], ((guess[1] + 540) % 360) - 180)) / 1000);
-            statusEl.textContent = `You are ${d0} km away — place the pin again`;
-            if (guessMarker) { guessMap.removeLayer(guessMarker); guessMarker = null; }
-            guess = null;
-            btn.disabled = true;
-            return;
+            const gll0 = L.latLng(guess[0], ((guess[1] + 540) % 360) - 180);
+            if (currentBounds.contains(gll0)) {
+                firstTryHit = true;             // влучив одразу — друга спроба не потрібна
+            } else {
+                usedSecondChance = true;
+                const d0 = Math.round(L.latLng(answer.lat, answer.lng).distanceTo(gll0) / 1000);
+                statusEl.textContent = `You are ${d0} km away — place the pin again`;
+                if (guessMarker) { guessMap.removeLayer(guessMarker); guessMarker = null; }
+                guess = null;
+                btn.disabled = true;
+                return;
+            }
         }
 
         const guessLatLng = L.latLng(guess[0], ((guess[1] + 540) % 360) - 180);
