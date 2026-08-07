@@ -37,7 +37,7 @@
         .brand { font-size:18px; font-weight:800; letter-spacing:.3px; color:var(--accent);
                  display:flex; align-items:center; gap:8px; }
         .brand svg { width:20px; height:20px; }
-        .brand-logo { width:26px; height:26px; object-fit:contain; border-radius:6px; }
+        .brand-logo { height:42px; width:auto; max-width:190px; object-fit:contain; display:block; }
         .user-profile { display:flex; align-items:center; gap:8px; }
         .level-badge { background:linear-gradient(135deg,var(--accent2),var(--accent));
             color:#fff; padding:4px 11px; border-radius:20px; font-weight:700; font-size:12px; }
@@ -209,11 +209,13 @@
 
     <div id="top-bar">
         <div class="brand">
-            <img src="logo.png" alt="" class="brand-logo"
-                 onerror="this.style.display='none'; document.getElementById('brand-fallback').style.display='inline';">
-            <svg id="brand-fallback" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 style="display:none;"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>
-            World Tiles
+            <img src="logo.png" alt="World Tiles" class="brand-logo"
+                 onerror="this.style.display='none'; document.getElementById('brand-fallback').style.display='flex';">
+            <span id="brand-fallback" style="display:none; align-items:center; gap:8px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:26px;height:26px;">
+                    <circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>
+                World Tiles
+            </span>
         </div>
         <div class="user-profile">
             <button id="settings-btn" class="avatar-btn icon-btn" title="Settings">
@@ -1669,16 +1671,6 @@
             myRNG = Math.random;
         }
 
-        if (currentGameMode === 'guesscountry') {
-            const ac = (answer.country || '').toUpperCase();
-            const gc = guessedCountry(guessLatLng.lat, guessLatLng.lng);
-            const mult = difficultyMultiplier();
-            if (isInside) roundScore = Math.round(5000 * mult);
-            else if (gc && gc === ac) roundScore = Math.round(3000 * mult);
-            else if (gc && CDATA[ac] && (CDATA[ac].bd || []).includes(gc)) roundScore = Math.round(1000 * mult);
-            else if (gc && ISO_TO_CONTINENT[gc] === ISO_TO_CONTINENT[ac]) roundScore = Math.round(300 * mult);
-            else roundScore = 0;
-        }
         if (currentGameMode === 'daily') {
             if (dailyDone()) { showInfoModal('Come back tomorrow', 'You have already completed today\u2019s Daily Quest. A new location appears every day at midnight.'); return; }
             myRNG = mulberry32(dailySeed());
@@ -1791,6 +1783,16 @@
         window.__seenKey = seenKey;
         window.__keyOf = keyOf;
 
+        // якщо локацій менше, ніж раундів — скорочуємо матч і повідомляємо
+        if (pool.length < totalRounds) {
+            const asked = totalRounds;
+            totalRounds = Math.max(1, pool.length);
+            setTimeout(() => showInfoModal('Not enough locations',
+                `This selection only has ${pool.length} distinct location${pool.length === 1 ? '' : 's'}. ` +
+                `The match was shortened from ${asked} to ${totalRounds} round${totalRounds === 1 ? '' : 's'}. ` +
+                `Widen the region, pick an easier size or choose another country for longer games.`), 350);
+        }
+        window.__activePoolSource = pool;
         activePool = shuffle([...pool]);
         
         timerMode = document.getElementById('timer-mode').value;
@@ -1834,7 +1836,8 @@
         const hb = document.getElementById('hint-box');
         if (hb) hb.style.display = (currentGameMode === 'daily') ? 'none' : 'flex';
 
-        if (activePool.length === 0) activePool = shuffle([...allPoints]);
+        if (activePool.length === 0)
+            activePool = shuffle([...(window.__activePoolSource || allPoints)]);
         answer = activePool.pop();
         try {
             const k = window.__seenKey;
@@ -2009,6 +2012,16 @@
             if (roundScore < 100) roundScore = 0;
         }
 
+        if (currentGameMode === 'guesscountry') {
+            const ac = (answer.country || '').toUpperCase();
+            const gc = guessedCountry(guessLatLng.lat, guessLatLng.lng);
+            const mult = difficultyMultiplier();
+            if (isInside) roundScore = Math.round(5000 * mult);
+            else if (gc && gc === ac) roundScore = Math.round(3000 * mult);
+            else if (gc && CDATA[ac] && (CDATA[ac].bd || []).includes(gc)) roundScore = Math.round(1000 * mult);
+            else if (gc && ISO_TO_CONTINENT[gc] === ISO_TO_CONTINENT[ac]) roundScore = Math.round(300 * mult);
+            else roundScore = 0;
+        }
         if (currentGameMode === 'daily') {
             const gLat = guessLatLng.lat, gLng = guessLatLng.lng;
             if (isInside) roundScore = 10000;
