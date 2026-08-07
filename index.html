@@ -29,7 +29,7 @@
                transition:background .25s,color .25s; }
 
         #top-bar {
-            position:fixed; top:0; left:0; right:0; height:74px;
+            position:fixed; top:0; left:0; right:0; height:54px;
             background:var(--bg2); border-bottom:1px solid var(--line);
             display:flex; align-items:center; justify-content:space-between;
             padding:0 18px 0 14px; z-index:1000; overflow:hidden;
@@ -38,7 +38,7 @@
         .brand { font-size:18px; font-weight:800; letter-spacing:.3px; color:var(--accent);
                  display:flex; align-items:center; gap:8px; }
         .brand svg { width:20px; height:20px; }
-        .brand-logo { height:66px; width:auto; max-width:300px; object-fit:contain; display:block; }
+        .brand-logo { height:38px; width:auto; max-width:240px; object-fit:contain; display:block; }
         .user-profile { display:flex; align-items:center; gap:8px; }
         .level-badge { background:linear-gradient(135deg,var(--accent2),var(--accent));
             color:#fff; padding:4px 11px; border-radius:20px; font-weight:700; font-size:12px; }
@@ -66,7 +66,7 @@
             align-items:center; justify-content:center; border-radius:11px; }
         .icon-btn.on { border-color:var(--accent); color:var(--accent); background:var(--surface2); }
 
-        #game { display:flex; height:calc(100vh - 74px); margin-top:74px; position:relative; }
+        #game { display:flex; height:calc(100vh - 54px); margin-top:54px; position:relative; }
         .panel { flex:1; position:relative; }
         #satellite, #guessmap { position:absolute; inset:0; }
         .divider { width:4px; background:var(--line); z-index:400; }
@@ -220,9 +220,11 @@
             background:color-mix(in srgb, var(--bg) 45%, transparent);
         }
         .badge:hover {
-            transform:perspective(600px) rotateX(9deg) rotateY(-9deg) scale(1.13);
-            box-shadow:0 14px 28px -10px rgba(0,0,0,.7); border-color:var(--gold); z-index:5;
+            transform:perspective(620px) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.14);
+            box-shadow:0 16px 30px -10px rgba(0,0,0,.72); border-color:var(--gold); z-index:5;
+            transition:transform .07s linear, box-shadow .25s, border-color .25s;
         }
+        .badge { will-change:transform; --rx:0deg; --ry:0deg; }
         .badge .shine {
             position:absolute; inset:-40%; pointer-events:none; opacity:0;
             background:linear-gradient(115deg, transparent 42%,
@@ -232,6 +234,28 @@
         .badge:hover .shine { opacity:1; animation:sweep .85s ease forwards; }
         @keyframes sweep { from { transform:translateX(-60%); } to { transform:translateX(60%); } }
         .badge-fallback { font-size:9px; text-align:center; color:var(--muted); padding:4px; line-height:1.25; }
+        .badge-modal { animation:unfold .42s cubic-bezier(.2,.9,.25,1); transform-origin:center top; }
+        @keyframes unfold {
+            0%   { opacity:0; transform:perspective(900px) rotateX(-72deg) scale(.9); }
+            60%  { opacity:1; transform:perspective(900px) rotateX(8deg) scale(1.01); }
+            100% { opacity:1; transform:perspective(900px) rotateX(0) scale(1); }
+        }
+        .badge-stage {
+            position:relative; width:190px; height:190px; margin:6px auto 0;
+            display:flex; align-items:center; justify-content:center; overflow:hidden;
+            border-radius:20px; background:color-mix(in srgb, var(--surface2) 80%, transparent);
+            border:1px solid var(--line); --rx:0deg; --ry:0deg;
+            transform:perspective(700px) rotateX(var(--rx)) rotateY(var(--ry));
+            transition:transform .09s linear;
+        }
+        .badge-stage img { width:84%; height:84%; object-fit:contain; margin:auto; display:block; }
+        .badge-stage.locked img { filter:grayscale(1) brightness(.45); opacity:.55; }
+        .shine-big {
+            position:absolute; inset:-40%; pointer-events:none;
+            background:linear-gradient(115deg, transparent 42%,
+                color-mix(in srgb,#fff 50%,transparent) 50%, transparent 58%);
+            animation:sweep 2.6s ease-in-out infinite;
+        }
         .set-row { display:flex; justify-content:space-between; align-items:center;
             padding:11px 10px; border-radius:11px; cursor:pointer; font-size:13.5px; font-weight:600;
             transition:background .15s; }
@@ -308,11 +332,7 @@
     <div id="lobby-modal" class="modal-overlay">
         <div class="modal">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="logo.png" alt="" style="height:32px; width:auto; object-fit:contain; opacity:.92;"
-                         onerror="this.style.display='none';">
-                    <h2 style="margin:0;">New game</h2>
-                </div>
+                <div></div>
                 <div style="display:flex; gap:8px;">
                     <button onclick="refreshSettingsUI();document.getElementById('settings-modal').style.display='flex';"
                             class="avatar-btn icon-btn" title="Settings">
@@ -329,7 +349,7 @@
 
             <div class="mode-card" data-mode="daily" onclick="selectGameMode('daily')"
                  style="margin-bottom:10px; padding:14px 10px;">
-                <h3 style="font-size:14px;">&#9733; Daily Quest</h3>
+                <h3 style="font-size:14px;">Daily Quest</h3>
                 <p>One location a day</p>
             </div>
 
@@ -515,9 +535,22 @@
         </div>
     </div>
 
+    <div id="badge-modal" class="modal-overlay" style="display:none;">
+        <div class="modal badge-modal" style="max-width:400px; text-align:center;">
+            <div id="badge-stage" class="badge-stage">
+                <img id="badge-big" src="" alt="">
+                <span class="shine-big"></span>
+            </div>
+            <h2 id="badge-title" style="margin-top:16px;">Badge</h2>
+            <p id="badge-desc" style="color:var(--muted); font-size:13px; line-height:1.6; margin:10px 0 6px;"></p>
+            <div id="badge-state" style="font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; margin-bottom:16px;"></div>
+            <button class="btn-primary" style="width:100%; padding:12px;"
+                onclick="document.getElementById('badge-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+
     <div id="info-modal" class="modal-overlay" style="display:none;">
         <div class="modal" style="max-width:360px; text-align:center;">
-            <div style="font-size:40px; margin-bottom:6px;">&#9733;</div>
             <h2 id="info-title">Title</h2>
             <p id="info-text" style="color:var(--muted); font-size:13px; line-height:1.6; margin:10px 0 18px;"></p>
             <button class="btn-primary" style="width:100%; padding:12px;"
@@ -901,8 +934,18 @@
                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <div class="badge-fallback" style="display:none;">${a.title}</div>
                 <span class="shine"></span>`;
-            d.onclick = () => showInfoModal(a.title,
-                a.desc + (unlocked ? '\n\nUnlocked' : '\n\nStill locked'));
+            d.onmousemove = (e) => {
+                const r = d.getBoundingClientRect();
+                const px = (e.clientX - r.left) / r.width - 0.5;
+                const py = (e.clientY - r.top) / r.height - 0.5;
+                d.style.setProperty('--ry', (px * 26).toFixed(1) + 'deg');
+                d.style.setProperty('--rx', (-py * 26).toFixed(1) + 'deg');
+            };
+            d.onmouseleave = () => {
+                d.style.setProperty('--rx', '0deg');
+                d.style.setProperty('--ry', '0deg');
+            };
+            d.onclick = () => showBadgeModal(a, unlocked);
             achList.appendChild(d);
         });
     }
@@ -1548,6 +1591,38 @@
         return h >>> 0;
     }
     function dailyDone() { return localStorage.getItem(DAILY_KEY) === todayKey(); }
+
+    function showBadgeModal(a, unlocked) {
+        const m = document.getElementById('badge-modal');
+        const stage = document.getElementById('badge-stage');
+        const img = document.getElementById('badge-big');
+        img.src = 'achievements/' + a.id + '.png';
+        img.onerror = () => { img.style.display = 'none'; };
+        img.style.display = 'block';
+        stage.classList.toggle('locked', !unlocked);
+        document.getElementById('badge-title').textContent = a.title;
+        document.getElementById('badge-desc').textContent = a.desc;
+        const st = document.getElementById('badge-state');
+        st.textContent = unlocked ? 'Unlocked' : 'Locked';
+        st.style.color = unlocked ? 'var(--good)' : 'var(--muted)';
+
+        stage.onmousemove = (e) => {
+            const r = stage.getBoundingClientRect();
+            const px = (e.clientX - r.left) / r.width - 0.5;
+            const py = (e.clientY - r.top) / r.height - 0.5;
+            stage.style.setProperty('--ry', (px * 34).toFixed(1) + 'deg');
+            stage.style.setProperty('--rx', (-py * 34).toFixed(1) + 'deg');
+        };
+        stage.onmouseleave = () => {
+            stage.style.setProperty('--rx', '0deg');
+            stage.style.setProperty('--ry', '0deg');
+        };
+
+        const box = m.querySelector('.badge-modal');
+        box.style.animation = 'none'; void box.offsetWidth; box.style.animation = '';
+        m.style.display = 'flex';
+    }
+
     function showInfoModal(title, text) {
         document.getElementById('info-title').textContent = title;
         document.getElementById('info-text').textContent = text;
