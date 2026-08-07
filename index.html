@@ -29,7 +29,7 @@
                transition:background .25s,color .25s; }
 
         #top-bar {
-            position:fixed; top:0; left:0; right:0; height:58px;
+            position:fixed; top:0; left:0; right:0; height:96px;
             background:var(--bg2); border-bottom:1px solid var(--line);
             display:flex; align-items:center; justify-content:space-between;
             padding:0 18px; z-index:1000;
@@ -37,7 +37,7 @@
         .brand { font-size:18px; font-weight:800; letter-spacing:.3px; color:var(--accent);
                  display:flex; align-items:center; gap:8px; }
         .brand svg { width:20px; height:20px; }
-        .brand-logo { height:42px; width:auto; max-width:190px; object-fit:contain; display:block; }
+        .brand-logo { height:84px; width:auto; max-width:320px; object-fit:contain; display:block; }
         .user-profile { display:flex; align-items:center; gap:8px; }
         .level-badge { background:linear-gradient(135deg,var(--accent2),var(--accent));
             color:#fff; padding:4px 11px; border-radius:20px; font-weight:700; font-size:12px; }
@@ -65,7 +65,7 @@
             align-items:center; justify-content:center; border-radius:11px; }
         .icon-btn.on { border-color:var(--accent); color:var(--accent); background:var(--surface2); }
 
-        #game { display:flex; height:calc(100vh - 58px); margin-top:58px; position:relative; }
+        #game { display:flex; height:calc(100vh - 96px); margin-top:96px; position:relative; }
         .panel { flex:1; position:relative; }
         #satellite, #guessmap { position:absolute; inset:0; }
         .divider { width:4px; background:var(--line); z-index:400; }
@@ -188,6 +188,46 @@
         .hint-btn:disabled::after { display:none; }
         .hint-btn.used { opacity:.35; cursor:not-allowed; border-color:var(--line); }
         .hint-btn.active { border-color:var(--gold); color:var(--gold); }
+        .belt {
+            position:relative; background:
+                linear-gradient(180deg, color-mix(in srgb,#000 22%,var(--surface2)) 0%, var(--surface2) 18%,
+                                        var(--surface2) 82%, color-mix(in srgb,#000 22%,var(--surface2)) 100%);
+            border:1px solid var(--line2); border-radius:14px; padding:14px 12px;
+            box-shadow:inset 0 2px 10px -4px rgba(0,0,0,.6);
+        }
+        .belt::before, .belt::after {
+            content:''; position:absolute; left:0; right:0; height:2px;
+            background:color-mix(in srgb, var(--gold) 45%, transparent);
+        }
+        .belt::before { top:7px; } .belt::after { bottom:7px; }
+        .belt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .badge {
+            position:relative; aspect-ratio:1; border-radius:12px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; overflow:hidden;
+            background:color-mix(in srgb, var(--bg2) 70%, transparent);
+            border:1px solid var(--line);
+            transition:transform .25s cubic-bezier(.2,.8,.3,1), box-shadow .25s, border-color .25s;
+            transform-style:preserve-3d;
+        }
+        .badge img { width:82%; height:82%; object-fit:contain; display:block; }
+        .badge.locked img { filter:grayscale(1) brightness(.45) contrast(.85); opacity:.55; }
+        .badge.locked::after {
+            content:''; position:absolute; inset:0;
+            background:color-mix(in srgb, var(--bg) 45%, transparent);
+        }
+        .badge:hover {
+            transform:perspective(600px) rotateX(9deg) rotateY(-9deg) scale(1.13);
+            box-shadow:0 14px 28px -10px rgba(0,0,0,.7); border-color:var(--gold); z-index:5;
+        }
+        .badge .shine {
+            position:absolute; inset:-40%; pointer-events:none; opacity:0;
+            background:linear-gradient(115deg, transparent 42%,
+                color-mix(in srgb,#fff 55%,transparent) 50%, transparent 58%);
+            transition:opacity .2s;
+        }
+        .badge:hover .shine { opacity:1; animation:sweep .85s ease forwards; }
+        @keyframes sweep { from { transform:translateX(-60%); } to { transform:translateX(60%); } }
+        .badge-fallback { font-size:9px; text-align:center; color:var(--muted); padding:4px; line-height:1.25; }
         .set-row { display:flex; justify-content:space-between; align-items:center;
             padding:11px 10px; border-radius:11px; cursor:pointer; font-size:13.5px; font-weight:600;
             transition:background .15s; }
@@ -309,6 +349,10 @@
                 <div id="daily-status" style="font-size:11.5px; color:var(--muted); line-height:1.6;">
                     One shot, no hints.
                 </div>
+                <div style="margin-top:8px; font-size:11px; color:var(--muted);">
+                    New location in <span id="daily-countdown" style="color:var(--gold); font-weight:800;">--:--:--</span>
+                    <span style="opacity:.7;">(resets 00:00 UTC)</span>
+                </div>
             </div>
 
             <div id="country-select-group" class="form-group" style="display: none;">
@@ -317,7 +361,15 @@
                     <span id="country-dropdown-selected">Select country...</span>
                     <span>&#9662;</span>
                 </div>
-                <div id="country-dropdown-list" class="custom-dropdown-list"></div>
+                <div id="country-dropdown-list" class="custom-dropdown-list">
+                    <div style="position:sticky; top:0; background:var(--surface); padding:7px; border-bottom:1px solid var(--line);">
+                        <input type="text" id="cm-search" placeholder="Search..." oninput="filterCountryDropdown(this.value)"
+                               onclick="event.stopPropagation()"
+                               style="width:100%; padding:8px 10px; border-radius:9px; background:var(--surface2);
+                                      border:1px solid var(--line); color:var(--text); font-size:13px; outline:none;">
+                    </div>
+                    <div id="cm-items"></div>
+                </div>
             </div>
 
             <div id="tiles-diff-group" class="form-group">
@@ -554,7 +606,10 @@
             <div id="pane-ach" style="display:none;">
                 <div style="font-size:11px; color:var(--muted); margin:4px 0 8px; text-transform:uppercase; letter-spacing:.5px;">Map pin &middot; unlocks every 10 levels</div>
                 <div id="pin-list" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;"></div>
-                <div id="achievements-list" class="achievements-box"></div>
+                <div style="font-size:11px; color:var(--muted); margin:4px 0 8px; text-transform:uppercase; letter-spacing:.5px;">
+                    Scout belt &middot; <span id="ach-count">0/16</span>
+                </div>
+                <div class="belt"><div id="achievements-list" class="belt-grid"></div></div>
             </div>
 
             <button class="btn-primary" onclick="saveProfile()" style="width:100%; margin-top:14px; padding:12px;">Save</button>
@@ -687,28 +742,22 @@
     const CONTINENT_NAMES = { AF:'Africa', AS:'Asia', EU:'Europe', NA:'North America', SA:'South America', OC:'Oceania', AN:'Antarctica' };
 
     const ACHIEVEMENTS_DEF = [
-        { id: 'first_game',    icon: '🎮', title: 'Rookie Traveler',   desc: 'Play your first game' },
-        { id: 'bullseye',      icon: '🎯', title: 'Sharpshooter',      desc: 'Land a 5,000 pts perfect hit' },
-        { id: 'high_score',    icon: '🏆', title: 'Map Master',        desc: 'Score over 20,000 points in one game' },
-        { id: 'veteran',       icon: '🧭', title: 'Seasoned Explorer', desc: 'Play 25 games' },
-        { id: 'addict',        icon: '🌍', title: 'Globetrotter',      desc: 'Play 100 games' },
-        { id: 'sniper',        icon: '💥', title: 'Sniper',            desc: 'Land 50 bullseyes' },
-        { id: 'legend',        icon: '👑', title: 'Cartographer',      desc: 'Score over 40,000 points in one game' },
-        { id: 'perfect_game',  icon: '✨', title: 'Flawless Run',      desc: 'Bullseye every round in a 5+ round game' },
-        { id: 'close_call',    icon: '📏', title: 'Within Reach',      desc: 'Guess within 1 km of the centre' },
-        { id: 'expert_mode',   icon: '🔬', title: 'Pixel Peeper',      desc: 'Finish a game on Expert difficulty' },
-        { id: 'africa_100',    icon: '🦁', title: 'Safari Guide',      desc: 'Guess 100 locations in Africa' },
-        { id: 'asia_100',      icon: '🏯', title: 'Silk Road',         desc: 'Guess 100 locations in Asia' },
-        { id: 'europe_100',    icon: '🏰', title: 'Grand Tour',        desc: 'Guess 100 locations in Europe' },
-        { id: 'americas_100',  icon: '🗽', title: 'New World',         desc: 'Guess 100 locations in the Americas' },
-        { id: 'oceania_50',    icon: '🏝️', title: 'Island Hopper',     desc: 'Guess 50 locations in Oceania' },
-        { id: 'six_continents',icon: '🌐', title: 'Six Continents',    desc: 'Visit all six inhabited continents' },
-        { id: 'countries_50',  icon: '🚩', title: 'Passport Stamps',   desc: 'See locations in 50 different countries' },
-        { id: 'countries_100', icon: '🛂', title: 'Border Crosser',    desc: 'See locations in 100 different countries' },
-        { id: 'marathon',      icon: '⏱️', title: 'Marathon',          desc: 'Play 500 rounds in total' },
-        { id: 'multiplayer',   icon: '🤝', title: 'Better Together',   desc: 'Finish a multiplayer room game' },
-        { id: 'far_miss',      icon: '🙈', title: 'Wrong Hemisphere',  desc: 'Miss by more than 10,000 km' },
-        { id: 'city_slicker',  icon: '🌆', title: 'City Slicker',      desc: 'Finish 10 games in Cities mode' }
+        { id: 'bullseye',      title: 'Sharpshooter',      desc: 'Land a 5,000 pts perfect hit' },
+        { id: 'high_score',    title: 'Map Master',        desc: 'Score over 20,000 points in one game' },
+        { id: 'veteran',       title: 'Seasoned Explorer', desc: 'Play 25 games' },
+        { id: 'sniper',        title: 'Sniper',            desc: 'Land 50 bullseyes' },
+        { id: 'legend',        title: 'Cartographer',      desc: 'Score over 40,000 points in one game' },
+        { id: 'perfect_game',  title: 'Flawless Run',      desc: 'Bullseye every round in a 5+ round game' },
+        { id: 'countries_50',  title: 'Passport Stamps',   desc: 'See locations in 50 different countries' },
+        { id: 'far_miss',      title: 'Wrong Hemisphere',  desc: 'Miss by more than 10,000 km' },
+        { id: 'addict',        title: 'Globetrotter',      desc: 'Play 100 games' },
+        { id: 'africa_100',    title: 'Safari Guide',      desc: 'Guess 100 locations in Africa' },
+        { id: 'asia_100',      title: 'Silk Road',         desc: 'Guess 100 locations in Asia' },
+        { id: 'europe_100',    title: 'Grand Tour',        desc: 'Guess 100 locations in Europe' },
+        { id: 'americas_100',  title: 'New World',         desc: 'Guess 100 locations in the Americas' },
+        { id: 'oceania_50',    title: 'Island Hopper',     desc: 'Guess 50 locations in Oceania' },
+        { id: 'countries_100', title: 'Border Crosser',    desc: 'See locations in 100 different countries' },
+        { id: 'marathon',      title: 'Marathon',          desc: 'Play 500 rounds in total' }
     ];
 
     function checkAchievements() {
@@ -721,7 +770,6 @@
         const inhabited = ['AF','AS','EU','NA','SA','OC'];
         const visitedAll = inhabited.every(c => (cnt[c] || 0) > 0);
 
-        unlock('first_game',    (currentUser.gamesPlayed || 0) >= 1);
         unlock('bullseye',      (currentUser.perfectHits || 0) >= 1);
         unlock('high_score',    (currentUser.highScore || 0) >= 20000);
         unlock('veteran',       (currentUser.gamesPlayed || 0) >= 25);
@@ -729,20 +777,15 @@
         unlock('sniper',        (currentUser.perfectHits || 0) >= 50);
         unlock('legend',        (currentUser.highScore || 0) >= 40000);
         unlock('perfect_game',  !!currentUser.hadPerfectGame);
-        unlock('close_call',    !!currentUser.gotCloseCall);
-        unlock('expert_mode',   !!currentUser.finishedExpert);
         unlock('africa_100',    (cnt.AF || 0) >= 100);
         unlock('asia_100',      (cnt.AS || 0) >= 100);
         unlock('europe_100',    (cnt.EU || 0) >= 100);
         unlock('americas_100',  americas >= 100);
         unlock('oceania_50',    (cnt.OC || 0) >= 50);
-        unlock('six_continents', visitedAll);
         unlock('countries_50',  (currentUser.countriesSeen || []).length >= 50);
         unlock('countries_100', (currentUser.countriesSeen || []).length >= 100);
         unlock('marathon',      (currentUser.roundsPlayed || 0) >= 500);
-        unlock('multiplayer',   !!currentUser.playedMultiplayer);
         unlock('far_miss',      !!currentUser.gotFarMiss);
-        unlock('city_slicker',  ((currentUser.gamesByMode || {}).cities || 0) >= 10);
 
         saveUserData();
     }
@@ -838,13 +881,21 @@
         const achList = document.getElementById('achievements-list');
         achList.innerHTML = '';
         const owned = currentUser.achievements || [];
-        const sortedAch = [...ACHIEVEMENTS_DEF].sort((a, b) =>
-            (owned.includes(b.id) ? 1 : 0) - (owned.includes(a.id) ? 1 : 0));
-        sortedAch.forEach(a => {
+        const cntEl = document.getElementById('ach-count');
+        if (cntEl) cntEl.textContent = `${owned.filter(id => ACHIEVEMENTS_DEF.some(a => a.id === id)).length}/${ACHIEVEMENTS_DEF.length}`;
+
+        ACHIEVEMENTS_DEF.forEach(a => {
             const unlocked = owned.includes(a.id);
-            achList.innerHTML += `<div class="achievement-item" style="opacity: ${unlocked?1:0.4}"><span class="ach-icon">${a.icon}</span>
-                <div><strong style="color: ${unlocked?'#38bdf8':'#94a3b8'}">${a.title}</strong>
-                <div style="font-size:10px; color:#64748b;">${a.desc} ${unlocked?'✓':''}</div></div></div>`;
+            const d = document.createElement('div');
+            d.className = 'badge' + (unlocked ? '' : ' locked');
+            d.title = a.title;
+            d.innerHTML = `<img src="achievements/${a.id}.png" alt="${a.title}"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="badge-fallback" style="display:none;">${a.title}</div>
+                <span class="shine"></span>`;
+            d.onclick = () => showInfoModal(a.title,
+                a.desc + (unlocked ? '\n\nUnlocked' : '\n\nStill locked'));
+            achList.appendChild(d);
         });
     }
 
@@ -1031,12 +1082,13 @@
             });
         }
 
-        const dropdownList = document.getElementById('country-dropdown-list');
+        const dropdownList = document.getElementById('cm-items');
         dropdownList.innerHTML = '';
-        
+
         countries.forEach(c => {
             const item = document.createElement('div');
             item.className = 'custom-dropdown-item';
+            item.dataset.name = countryName(c).toLowerCase();
             item.innerHTML = getCountryHTML(c);
             item.onclick = () => {
                 selectedCountry = c;
@@ -1045,6 +1097,13 @@
             };
             dropdownList.appendChild(item);
         });
+
+        window.filterCountryDropdown = (q) => {
+            const t = (q || '').toLowerCase();
+            dropdownList.querySelectorAll('.custom-dropdown-item').forEach(el => {
+                el.style.display = el.dataset.name.includes(t) ? 'flex' : 'none';
+            });
+        };
 
         if (countries.length > 0) {
             selectedCountry = countries[0];
@@ -1486,6 +1545,20 @@
         document.getElementById('info-text').textContent = text;
         document.getElementById('info-modal').style.display = 'flex';
     }
+    function tickDailyCountdown() {
+        const el = document.getElementById('daily-countdown');
+        if (!el) return;
+        const now = new Date();
+        const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0);
+        let sec = Math.max(0, Math.floor((next - now.getTime()) / 1000));
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const ss = String(sec % 60).padStart(2, '0');
+        el.textContent = `${h}:${m}:${ss}`;
+    }
+    setInterval(tickDailyCountdown, 1000);
+    tickDailyCountdown();
+
     function updateDailyNote() {
         const el = document.getElementById('daily-status');
         if (!el) return;
@@ -1657,7 +1730,11 @@
         showEndGameModal();
     }
 
-    function openLobby() { document.getElementById('end-modal').style.display = 'none'; document.getElementById('lobby-modal').style.display = 'flex'; }
+    function openLobby() {
+        document.getElementById('end-modal').style.display = 'none';
+        if (currentGameMode === 'daily' && dailyDone()) selectGameMode('tiles');
+        document.getElementById('lobby-modal').style.display = 'flex';
+    }
     document.getElementById('menu-btn').addEventListener('click', openLobby);
 
     document.getElementById('start-btn').addEventListener('click', () => {
@@ -1766,6 +1843,7 @@
         // кількість раундів має бути відома ДО перевірки запасу локацій
         totalRounds = (currentGameMode === 'daily')
             ? 1 : parseInt(document.getElementById('rounds-select').value);
+        console.log('Starting', currentGameMode, '| rounds:', totalRounds);
 
         // не повторювати локації, доки не вичерпається запас
         const seenKey = 'wt_seen_' + currentGameMode;
