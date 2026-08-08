@@ -1856,7 +1856,7 @@
     function finishQuiz() {
         document.getElementById('quiz-modal').style.display = 'none';
         totalScore += quizPoints;
-        localStorage.setItem(DAILY_KEY, todayKey()); rememberDailyCountry((answer.country || '').toUpperCase());
+        localStorage.setItem(DAILY_KEY, todayKey());
         showEndGameModal();
     }
 
@@ -1897,13 +1897,21 @@
             });
             console.log('Guess Country pool:', pool.length);
         } else if (currentGameMode === 'daily') {
-            let recent = [];
-            try { recent = JSON.parse(localStorage.getItem('wt_daily_countries') || '[]'); } catch (e) {}
-            pool = allPoints.filter(p => p.pop >= 100000 && p.country &&
-                !recent.includes((p.country || '').toUpperCase()));
-            if (pool.length < 5) pool = allPoints.filter(p => p.pop >= 100000 && p.country);
+            // країна дня визначається лише датою — однаково для всіх гравців
+            const dayNum = Math.floor(Date.now() / 86400000);
+            const bigCities = allPoints.filter(p => p.pop >= 100000 && p.country);
+            const countryList = [...new Set(bigCities.map(p => p.country.toUpperCase()))].sort();
+
+            // фіксований перемішувач (той самий у всіх), щоб країни не йшли за алфавітом
+            const fixedRng = mulberry32(987654321);
+            for (let i = countryList.length - 1; i > 0; i--) {
+                const j = Math.floor(fixedRng() * (i + 1));
+                [countryList[i], countryList[j]] = [countryList[j], countryList[i]];
+            }
+            const todayCountry = countryList[dayNum % countryList.length];
+            pool = bigCities.filter(p => p.country.toUpperCase() === todayCountry);
             totalRounds = 1;
-            console.log('Daily pool:', pool.length, '| recent countries:', recent.length);
+            console.log('Daily country:', todayCountry, '| pool:', pool.length, '| day:', dayNum);
         } else if (currentGameMode === 'cities') {
             const diff = document.getElementById('cities-difficulty').value;
             const source = document.getElementById('cities-source').value;
@@ -1980,7 +1988,9 @@
         let seen = [];
         try { seen = JSON.parse(localStorage.getItem(seenKey) || '[]'); } catch (e) { seen = []; }
         const keyOf = pt => pt.lat.toFixed(3) + ',' + pt.lng.toFixed(3);
-        const fresh = pool.filter(pt => !seen.includes(keyOf(pt)));
+        const fresh = (currentGameMode === 'daily')
+            ? pool                                   // щоденний однаковий для всіх — без особистих фільтрів
+            : pool.filter(pt => !seen.includes(keyOf(pt)));
         if (fresh.length >= totalRounds) {
             pool = fresh;
         } else {
@@ -2158,7 +2168,7 @@
                 quizQuestions = buildQuiz((answer.country || '').toUpperCase());
                 btn.disabled = false;
                 if (!quizQuestions.length) {
-                    localStorage.setItem(DAILY_KEY, todayKey()); rememberDailyCountry((answer.country || '').toUpperCase());
+                    localStorage.setItem(DAILY_KEY, todayKey());
                     showEndGameModal();
                 } else showQuiz();
                 return;
